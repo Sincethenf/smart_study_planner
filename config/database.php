@@ -2,7 +2,7 @@
 // config/database.php
 session_start();
 
-// Database configuration
+
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
@@ -10,7 +10,7 @@ define('DB_NAME', 'school_platform');
 define('SITE_NAME', 'Smart Study Planner');
 define('SITE_URL', 'http://localhost/smart_study_planner');
 
-// Create connection
+
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
 // Check connection
