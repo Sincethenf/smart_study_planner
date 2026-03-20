@@ -103,6 +103,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
+// Handle cover photo upload
+if (isset($_FILES['cover_photo']) && $_FILES['cover_photo']['error'] == 0) {
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+    $max_size = 5 * 1024 * 1024;
+    if (!in_array($_FILES['cover_photo']['type'], $allowed_types)) {
+        $error = "Only JPG, PNG and GIF images are allowed";
+    } elseif ($_FILES['cover_photo']['size'] > $max_size) {
+        $error = "File size must be less than 5MB";
+    } else {
+        $upload_dir = '../assets/uploads/covers/';
+        if (!file_exists($upload_dir)) mkdir($upload_dir, 0777, true);
+        $extension = pathinfo($_FILES['cover_photo']['name'], PATHINFO_EXTENSION);
+        $filename = 'cover_' . $user_id . '_' . time() . '.' . $extension;
+        if (move_uploaded_file($_FILES['cover_photo']['tmp_name'], $upload_dir . $filename)) {
+            if (!empty($user['cover_photo'])) {
+                $old_file = $upload_dir . $user['cover_photo'];
+                if (file_exists($old_file)) unlink($old_file);
+            }
+            $stmt = $conn->prepare("UPDATE users SET cover_photo = ? WHERE id = ?");
+            $stmt->bind_param("si", $filename, $user_id);
+            if ($stmt->execute()) {
+                $success = "Cover photo updated successfully!";
+                $user['cover_photo'] = $filename;
+            } else {
+                $error = "Failed to update cover photo in database";
+            }
+        } else {
+            $error = "Failed to upload cover photo";
+        }
+    }
+}
+
 // Handle profile picture upload
 if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == 0) {
     $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
@@ -173,37 +205,87 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
             margin: 0 auto;
         }
         
-        .profile-header {
+        .student-header {
             background: var(--white);
             border-radius: 20px;
-            padding: 30px;
             margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .cover-photo {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, #7b2cff 0%, #a855f7 50%, #c084fc 100%);
+            overflow: hidden;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .cover-edit-btn {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.45);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 40px;
+            gap: 6px;
+            transition: background 0.3s;
+            z-index: 10;
         }
-        
+
+        .cover-edit-btn:hover {
+            background: rgba(0,0,0,0.65);
+        }
+
+        #cover-input { display: none; }
+
+        .cover-photo img.cover-img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            padding: 0 30px 20px 30px;
+            margin-top: -75px;
+            position: relative;
+            z-index: 20;
+        }
+
         .profile-avatar-large {
             position: relative;
             width: 150px;
             height: 150px;
+            flex-shrink: 0;
         }
-        
+
         .profile-avatar-large img {
             width: 100%;
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid var(--primary-purple);
+            border: 4px solid var(--white);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        
+
         .upload-overlay {
             position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 45px;
-            height: 45px;
+            bottom: 5px;
+            right: 5px;
+            width: 38px;
+            height: 38px;
             background: var(--primary-purple);
             border-radius: 50%;
             display: flex;
@@ -214,29 +296,28 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
             border: 3px solid var(--white);
             transition: all 0.3s ease;
         }
-        
+
         .upload-overlay:hover {
             background: #6a1bb9;
             transform: scale(1.1);
         }
-        
-        .upload-overlay i {
-            font-size: 20px;
-        }
-        
-        #file-input {
-            display: none;
-        }
-        
+
+        .upload-overlay i { font-size: 16px; }
+
+        #file-input { display: none; }
+
+        .profile-title { padding-bottom: 10px; }
+
         .profile-title h2 {
             color: var(--dark);
-            font-size: 28px;
-            margin-bottom: 5px;
+            font-size: 26px;
+            margin-bottom: 4px;
         }
-        
+
         .profile-title p {
             color: var(--gray);
-            font-size: 16px;
+            font-size: 14px;
+            margin-bottom: 3px;
         }
         
         .profile-stats {
@@ -448,9 +529,12 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
         }
         
         @media (max-width: 768px) {
+            .cover-photo { height: 150px; }
             .profile-header {
                 flex-direction: column;
+                align-items: center;
                 text-align: center;
+                margin-top: -50px;
             }
             
             .profile-stats {
@@ -506,21 +590,34 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
             </div>
             
             <div class="profile-container">
-                <!-- Profile Header -->
-                <div class="profile-header">
-                    <div class="profile-avatar-large">
-                        <img src="../assets/uploads/profiles/<?php echo $user['profile_picture']; ?>" alt="Profile" id="profileImage">
-                        <div class="upload-overlay" onclick="document.getElementById('file-input').click();">
-                            <i class="fas fa-camera"></i>
-                        </div>
-                        <form id="uploadForm" method="POST" enctype="multipart/form-data">
-                            <input type="file" id="file-input" name="profile_picture" accept="image/*" onchange="this.form.submit()">
+                <!-- Student Header with Cover Photo -->
+                <div class="student-header">
+                    <div class="cover-photo">
+                        <?php if (!empty($user['cover_photo'])): ?>
+                            <img src="../assets/uploads/covers/<?php echo $user['cover_photo']; ?>" alt="Cover" class="cover-img">
+                        <?php endif; ?>
+                        <form id="coverForm" method="POST" enctype="multipart/form-data">
+                            <input type="file" id="cover-input" name="cover_photo" accept="image/*" onchange="this.form.submit()">
                         </form>
+                        <button class="cover-edit-btn" onclick="document.getElementById('cover-input').click();">
+                            <i class="fas fa-camera"></i> Edit Cover Photo
+                        </button>
                     </div>
-                    <div class="profile-title">
-                        <h2><?php echo htmlspecialchars($user['full_name']); ?></h2>
-                        <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
-                        <p><i class="fas fa-id-card"></i> Student ID: <?php echo htmlspecialchars($user['student_id']); ?></p>
+                    <div class="profile-header">
+                        <div class="profile-avatar-large">
+                            <img src="../assets/uploads/profiles/<?php echo $user['profile_picture']; ?>" alt="Profile" id="profileImage">
+                            <div class="upload-overlay" onclick="document.getElementById('file-input').click();">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                                <input type="file" id="file-input" name="profile_picture" accept="image/*" onchange="this.form.submit()">
+                            </form>
+                        </div>
+                        <div class="profile-title">
+                            <h2><?php echo htmlspecialchars($user['full_name']); ?></h2>
+                            <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
+                            <p><i class="fas fa-id-card"></i> Student ID: <?php echo htmlspecialchars($user['student_id']); ?></p>
+                        </div>
                     </div>
                 </div>
                 

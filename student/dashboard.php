@@ -519,34 +519,6 @@ $daily = $daily_activity->get_result();
             </div>
          </div>
 
-         <!-- Profile Section -->
-         <div class="profile-section fade-in">
-            <div class="profile-avatar">
-               <img src="../assets/uploads/profiles/<?php echo $user['profile_picture']; ?>" alt="Profile">
-               <div class="edit-avatar">
-                  <i class="fas fa-camera"></i>
-               </div>
-            </div>
-            <div class="profile-info">
-               <div class="info-item">
-                  <div class="info-label">Full Name</div>
-                  <div class="info-value"><?php echo htmlspecialchars($user['full_name']); ?></div>
-               </div>
-               <div class="info-item">
-                  <div class="info-label">Email</div>
-                  <div class="info-value"><?php echo htmlspecialchars($user['email']); ?></div>
-               </div>
-               <div class="info-item">
-                  <div class="info-label">Student ID</div>
-                  <div class="info-value"><?php echo htmlspecialchars($user['student_id']); ?></div>
-               </div>
-               <div class="info-item">
-                  <div class="info-label">Join Date</div>
-                  <div class="info-value"><?php echo date('M d, Y', strtotime($user['join_date'])); ?></div>
-               </div>
-            </div>
-         </div>
-
          <!-- Streak Card -->
          <div class="streak-card fade-in">
             <div class="streak-icon">
