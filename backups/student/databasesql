@@ -1,0 +1,136 @@
+-- Create database
+CREATE DATABASE IF NOT EXISTS school_platform;
+USE school_platform;
+
+-- Users table
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    role ENUM('admin', 'student') DEFAULT 'student',
+    profile_picture VARCHAR(255) DEFAULT 'default-avatar.png',
+    student_id VARCHAR(20) UNIQUE,
+    join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login DATE,
+    login_streak INT DEFAULT 0,
+    points INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User activity table
+CREATE TABLE user_activity (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    activity_date DATE NOT NULL,
+    activity_type ENUM('login', 'lesson', 'generate', 'favorite') NOT NULL,
+    count INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_daily_activity (user_id, activity_date, activity_type)
+);
+
+-- Lessons table
+CREATE TABLE lessons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    content TEXT,
+    difficulty ENUM('beginner', 'intermediate', 'advanced') DEFAULT 'beginner',
+    points INT DEFAULT 10,
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
+-- User lesson progress
+CREATE TABLE user_lessons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    lesson_id INT NOT NULL,
+    status ENUM('not_started', 'in_progress', 'completed') DEFAULT 'not_started',
+    progress INT DEFAULT 0,
+    completed_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_lesson (user_id, lesson_id)
+);
+
+-- Favorites table
+CREATE TABLE favorites (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    content_type ENUM('lesson', 'generated') NOT NULL,
+    content_id INT,
+    content_data TEXT,
+    title VARCHAR(200),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Generated content table
+CREATE TABLE generated_content (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(200),
+    content TEXT,
+    type VARCHAR(50),
+    is_favorite BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Rankings/Leaderboard table
+CREATE TABLE rankings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    total_points INT DEFAULT 0,
+    lessons_completed INT DEFAULT 0,
+    generated_count INT DEFAULT 0,
+    rank_position INT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_ranking (user_id)
+);
+
+-- Insert sample lessons
+INSERT INTO lessons (title, description, content, difficulty, points) VALUES
+('Introduction to Mathematics', 'Learn basic mathematical concepts', 'Content here...', 'beginner', 10),
+('Advanced Physics', 'Explore the laws of physics', 'Content here...', 'advanced', 30),
+('English Literature', 'Study classic literature', 'Content here...', 'intermediate', 20),
+('Computer Science Basics', 'Introduction to programming', 'Content here...', 'beginner', 15),
+('World History', 'Journey through ancient civilizations', 'Content here...', 'intermediate', 25);
+
+-- Insert sample admin user (password: admin123)
+INSERT INTO users (username, email, password, full_name, role, student_id, points) VALUES
+('admin', 'admin@school.com', '$2y$10$YourHashedPasswordHere', 'Admin User', 'admin', 'ADM001', 0);
+
+-- Insert sample student (password: student123)
+INSERT INTO users (username, email, password, full_name, role, student_id, points) VALUES
+('john.doe', 'john@example.com', '$2y$10$YourHashedPasswordHere', 'John Doe', 'student', 'STU001', 150),
+('jane.smith', 'jane@example.com', '$2y$10$YourHashedPasswordHere', 'Jane Smith', 'student', 'STU002', 200),
+('bob.wilson', 'bob@example.com', '$2y$10$YourHashedPasswordHere', 'Bob Wilson', 'student', 'STU003', 175),
+('alice.brown', 'alice@example.com', '$2y$10$YourHashedPasswordHere', 'Alice Brown', 'student', 'STU004', 225),
+('charlie.davis', 'charlie@example.com', '$2y$10$YourHashedPasswordHere', 'Charlie Davis', 'student', 'STU005', 190);
+
+-- Insert sample activity data
+INSERT INTO user_activity (user_id, activity_date, activity_type, count) VALUES
+(2, CURDATE(), 'login', 1),
+(2, CURDATE(), 'lesson', 3),
+(2, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'login', 1),
+(2, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'lesson', 2),
+(2, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'login', 1),
+(3, CURDATE(), 'login', 1),
+(3, CURDATE(), 'generate', 2),
+(4, CURDATE(), 'login', 1),
+(4, CURDATE(), 'lesson', 4);
+
+-- Insert rankings
+INSERT INTO rankings (user_id, total_points, lessons_completed, generated_count) VALUES
+(2, 150, 15, 5),
+(3, 200, 20, 8),
+(4, 175, 17, 6),
+(5, 225, 22, 10),
+(6, 190, 18, 7);
