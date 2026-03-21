@@ -5,6 +5,12 @@ requireLogin();
 
 $user_id = $_SESSION['user_id'];
 
+// Get user data
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
+
 // Handle remove favorite
 if (isset($_POST['remove_favorite'])) {
     $favorite_id = $_POST['favorite_id'];
@@ -56,12 +62,12 @@ $favorites = $favorites->get_result();
                     <a href="favorites.php" class="nav-item active">Favorites</a>
                     <a href="rankings.php" class="nav-item">Rankings</a>
                 </div>
-                <div class="user-profile">
+                <div class="user-profile" onclick="window.location.href='profile.php'" style="cursor: pointer;">
                     <div class="user-info">
-                        <h4><?php echo $_SESSION['full_name']; ?></h4>
-                        <p>Student</p>
+                        <h4><?php echo htmlspecialchars($user['full_name']); ?></h4>
+                        <p><?php echo htmlspecialchars($user['email']); ?></p>
                     </div>
-                    <img src="../assets/uploads/profiles/default-avatar.png" alt="Profile">
+                    <img src="../assets/uploads/profiles/<?php echo $user['profile_picture']; ?>" alt="Profile">
                 </div>
             </div>
             
