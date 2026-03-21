@@ -621,7 +621,7 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 
     <div class="topbar-info">
       <div class="topbar-title">Dashboard</div>
-      <div class="topbar-sub">Welcome back, <?= htmlspecialchars(explode(' ',$user['full_name'])[0]) ?> 👋</div>
+      <div class="topbar-sub">Welcome back, <?= htmlspecialchars(explode(' ',$user['full_name'])[0]) ?></div>
     </div>
 
     <nav class="top-nav-links">
