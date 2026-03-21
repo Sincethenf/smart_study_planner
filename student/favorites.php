@@ -36,6 +36,43 @@ $favorites = $favorites->get_result();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
 /* ═══════════════════════════════════════════════
+   LOADING SCREEN
+═══════════════════════════════════════════════ */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+.loader {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(244, 63, 94, 0.2);
+  border-top-color: #f43f5e;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════
    RESET & ROOT
 ═══════════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -174,6 +211,10 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
     </style>
 </head>
 <body>
+<div class="loading-screen" id="loadingScreen">
+  <div class="loader"></div>
+  <div class="loading-text">Loading Favorites...</div>
+</div>
 <div class="shell">
 
 <!-- ════════════════════════════════════

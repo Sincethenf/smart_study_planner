@@ -112,25 +112,16 @@ $diffMeta = [
   border-top-color: #3b82f6;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 .loading-text {
-  margin-top: 20px;
-  color: #dde2f0;
-  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
   font-weight: 500;
   letter-spacing: 0.5px;
-}
-.loading-logo {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.1); opacity: 0.8; }
 }
 
 /* ═══════════════════════════════════════
@@ -345,7 +336,6 @@ form.lbtn-form .lbtn{width:100%}
      LOADING SCREEN
 ════════════════════════════════════ -->
 <div class="loading-screen" id="loadingScreen">
-  <div class="loading-logo">📚</div>
   <div class="loader"></div>
   <div class="loading-text">Loading Lessons...</div>
 </div>
