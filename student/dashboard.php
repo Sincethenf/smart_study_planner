@@ -167,12 +167,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:11px;
 }
-.logo-mark{
-  width:36px;height:36px;border-radius:9px;
-  background:linear-gradient(135deg,var(--blue),var(--violet));
-  display:grid;place-items:center;font-size:1rem;flex-shrink:0;
-  box-shadow:0 0 18px rgba(59,130,246,.25);
-}
 .logo-text{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.25}
 .logo-text span{display:block;font-weight:400;color:var(--text3);font-size:.67rem;letter-spacing:.04em}
 
@@ -584,7 +578,6 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 ═══════════════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <!-- <div class="logo-mark"></div> -->
     <div class="logo-text">
       <?php echo SITE_NAME; ?>
       <span>Student Portal</span>

@@ -174,12 +174,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   padding:24px 20px 20px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:11px;
 }
-.logo-mark{
-  width:36px;height:36px;border-radius:9px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--blue),var(--violet));
-  display:grid;place-items:center;font-size:1rem;
-  box-shadow:0 0 18px rgba(59,130,246,.25);
-}
 .logo-text{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.25}
 .logo-text span{display:block;font-weight:400;color:var(--text3);font-size:.67rem;letter-spacing:.04em}
 .nav-group-label{font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:18px 20px 6px}
@@ -471,22 +465,63 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   .stats-row{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:768px){
+  :root{--sidebar-w:280px}
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
   .overlay.open{display:block}
   .main{margin-left:0}
   .hamburger{display:grid}
-  .page{padding:16px 14px}
-  .topbar{padding:0 14px}
-  .avatar-row{flex-wrap:wrap;margin-top:-44px;padding:0 16px 18px}
-  .profile-actions{margin-left:0;width:100%}
-  .cover-wrap{height:150px}
+  .page{padding:16px 14px;gap:16px}
+  .topbar{padding:0 14px;height:auto;min-height:var(--topbar-h)}
+  .topbar-title{font-size:.95rem}
+  .topbar-sub{display:none}
+  .avatar-row{flex-direction:column;align-items:center;text-align:center;margin-top:-44px;padding:0 16px 18px;gap:12px}
+  .avatar-wrap{width:96px;height:96px}
+  .profile-meta{padding-bottom:0}
+  .profile-name{font-size:1.15rem}
+  .profile-email,.profile-sid{font-size:.75rem;justify-content:center}
+  .profile-actions{margin-left:0;width:100%;flex-direction:column}
+  .btn-primary,.btn-ghost{width:100%;justify-content:center}
+  .cover-wrap{height:140px}
+  .cover-edit{bottom:10px;right:10px;padding:6px 12px;font-size:.72rem}
   .info-grid{grid-template-columns:1fr}
   .form-grid{grid-template-columns:1fr}
-  .stats-row{grid-template-columns:1fr 1fr}
+  .stats-row{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-card{padding:14px 16px}
+  .stat-val{font-size:1.35rem}
+  .stat-lbl{font-size:.65rem}
+  .profile-body{border-radius:var(--radius-sm)}
+  .tab-bar{padding:6px 6px 0;gap:0}
+  .tab-btn{padding:8px 12px;font-size:.75rem;gap:5px}
+  .tab-btn i{font-size:.75rem}
+  .tab-panel{padding:20px 16px}
+  .panel-title{font-size:.88rem}
+  .panel-sub{font-size:.72rem;margin-bottom:16px}
+  .form-actions{flex-direction:column}
+  .btn-save,.btn-cancel{width:100%;justify-content:center}
+  .user-pill .pill-name{display:none}
 }
 @media(max-width:480px){
-  .stats-row{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr;gap:8px}
+  .stat-card{flex-direction:row;gap:12px}
+  .stat-ico{width:34px;height:34px;font-size:.85rem}
+  .avatar-row{margin-top:-36px}
+  .avatar-wrap{width:80px;height:80px}
+  .avatar-cam{width:28px;height:28px;font-size:.7rem}
+  .cover-wrap{height:120px}
+  .cover-edit{padding:5px 10px;font-size:.68rem;bottom:8px;right:8px}
+  .cover-edit i{font-size:.7rem}
+  .profile-name{font-size:1rem}
+  .profile-email,.profile-sid{font-size:.7rem}
+  .tab-btn{padding:7px 10px;font-size:.7rem}
+  .tab-btn span{display:none}
+  .tab-panel{padding:16px 12px}
+  .form-group input,.form-group textarea,.form-group select{font-size:.8rem;padding:9px 11px}
+  .form-group label{font-size:.72rem}
+  .btn-primary,.btn-ghost,.btn-save,.btn-cancel{font-size:.8rem;padding:9px 16px}
+  .info-cell{padding:12px 14px}
+  .info-label{font-size:.62rem}
+  .info-value{font-size:.82rem}
 }
 </style>
 </head>
@@ -498,7 +533,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 ════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <!-- <div class="logo-mark">🎓</div> -->
     <div class="logo-text"><?php echo SITE_NAME; ?><span>Student Portal</span></div>
   </div>
   <div class="sidebar-nav">
@@ -641,16 +675,16 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
       <!-- Tab bar -->
       <div class="tab-bar">
         <button class="tab-btn active" data-tab="personal-info" onclick="switchTab('personal-info')">
-          <i class="fas fa-user"></i> Personal Info
+          <i class="fas fa-user"></i> <span>Personal Info</span>
         </button>
         <button class="tab-btn" data-tab="edit-profile" onclick="switchTab('edit-profile')">
-          <i class="fas fa-pen-to-square"></i> Edit Profile
+          <i class="fas fa-pen-to-square"></i> <span>Edit Profile</span>
         </button>
         <button class="tab-btn" data-tab="change-password" onclick="switchTab('change-password')">
-          <i class="fas fa-lock"></i> Change Password
+          <i class="fas fa-lock"></i> <span>Change Password</span>
         </button>
         <button class="tab-btn" data-tab="account-info" onclick="switchTab('account-info')">
-          <i class="fas fa-circle-info"></i> Account Info
+          <i class="fas fa-circle-info"></i> <span>Account Info</span>
         </button>
       </div>
 
