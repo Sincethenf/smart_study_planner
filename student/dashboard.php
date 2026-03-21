@@ -264,7 +264,9 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   display:grid;place-items:center;font-size:.72rem;font-weight:700;
   color:#fff;flex-shrink:0;
   background:linear-gradient(135deg,var(--blue),var(--violet));
+  overflow:hidden;
 }
+.pill-avatar img{width:100%;height:100%;object-fit:cover}
 .pill-name{font-size:.82rem;font-weight:600;color:var(--text)}
 
 /* ═══════════════════════════════════════════════════
@@ -634,7 +636,13 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
     <div class="topbar-right">
       <a href="notifications.php" class="icon-btn"><i class="fas fa-bell"></i><span class="notif-pip"></span></a>
       <a href="profile.php" class="user-pill">
-        <div class="pill-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
+        <div class="pill-avatar">
+          <?php if (!empty($user['profile_picture'])): ?>
+            <img src="../assets/uploads/profiles/<?= htmlspecialchars($user['profile_picture']) ?>" alt="Profile">
+          <?php else: ?>
+            <?= strtoupper(substr($user['full_name'],0,1)) ?>
+          <?php endif; ?>
+        </div>
         <span class="pill-name"><?= htmlspecialchars($user['full_name']) ?></span>
       </a>
     </div>

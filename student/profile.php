@@ -214,7 +214,8 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .icon-btn:hover{border-color:var(--border-hi);color:var(--text)}
 .user-pill{display:flex;align-items:center;gap:9px;padding:5px 14px 5px 6px;border-radius:30px;background:var(--surface);border:1px solid var(--border);cursor:pointer;text-decoration:none;transition:border-color .18s var(--ease)}
 .user-pill:hover{border-color:var(--border-hi)}
-.pill-avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--violet))}
+.pill-avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--violet));overflow:hidden}
+.pill-avatar img{width:100%;height:100%;object-fit:cover}
 .pill-name{font-size:.82rem;font-weight:600;color:var(--text)}
 
 /* ═══════════════════════════════════════════════
@@ -575,7 +576,13 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
     <div class="topbar-right">
       <a href="notifications.php" class="icon-btn"><i class="fas fa-bell"></i></a>
       <a href="profile.php" class="user-pill">
-        <div class="pill-avatar"><?php echo strtoupper(substr($user['full_name'],0,1)); ?></div>
+        <div class="pill-avatar">
+          <?php if (!empty($user['profile_picture'])): ?>
+            <img src="../assets/uploads/profiles/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile">
+          <?php else: ?>
+            <?php echo strtoupper(substr($user['full_name'],0,1)); ?>
+          <?php endif; ?>
+        </div>
         <span class="pill-name"><?php echo htmlspecialchars($user['full_name']); ?></span>
       </a>
     </div>
