@@ -617,6 +617,13 @@ tbody td{padding:12px 20px;font-size:.84rem;color:var(--text2);vertical-align:mi
 </div><!-- /shell -->
 
 <script>
+// Loading Screen
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    document.getElementById('loadingScreen').classList.add('hidden');
+  }, 1300);
+});
+
 // ── Count-up ──────────────────────────────────────────────
 document.querySelectorAll('.stat-val[data-count]').forEach(el => {
   const target = parseInt(el.dataset.count, 10);

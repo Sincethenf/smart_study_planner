@@ -621,6 +621,13 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 </div><!-- /shell -->
 
 <script>
+// ── Loading Screen ────────────────────────────────────────
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    document.getElementById('loadingScreen').classList.add('hidden');
+  }, 1000);
+});
+
 // ── Topic chip click ──────────────────────────────────────
 function setTopic(label) {
   document.getElementById('promptInput').value = label;

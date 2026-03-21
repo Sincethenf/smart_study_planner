@@ -103,6 +103,52 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════
+   LOADING SCREEN
+═══════════════════════════════════════════════════ */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+.loader {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(123, 44, 255, 0.2);
+  border-top-color: #7b2cff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  margin-top: 20px;
+  color: #dde2f0;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.loading-logo {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* ═══════════════════════════════════════════════════
    RESET & VARIABLES
 ═══════════════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -573,6 +619,15 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 </style>
 </head>
 <body>
+<!-- ═══════════════════════════════════════════
+     LOADING SCREEN
+═══════════════════════════════════════════════ -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo"></div>
+  <div class="loader"></div>
+  <div class="loading-text">Loading Dashboard...</div>
+</div>
+
 <div class="shell">
 
 <!-- ═══════════════════════════════════════════
@@ -933,6 +988,13 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 </div><!-- /shell -->
 
 <script>
+// ── Loading Screen ────────────────────────────────────────
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    document.getElementById('loadingScreen').classList.add('hidden');
+  }, 1200); // Show loading for 1.2 seconds
+});
+
 // ── Chart defaults ────────────────────────────────────────
 Chart.defaults.color = '#4a5270';
 Chart.defaults.font.family = 'Outfit';

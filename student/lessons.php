@@ -88,6 +88,52 @@ $diffMeta = [
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
 /* ═══════════════════════════════════════
+   LOADING SCREEN
+═══════════════════════════════════════ */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.loading-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+.loader {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  margin-top: 20px;
+  color: #dde2f0;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.loading-logo {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* ═══════════════════════════════════════
    RESET & ROOT
 ═══════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -295,6 +341,15 @@ form.lbtn-form .lbtn{width:100%}
 </style>
 </head>
 <body>
+<!-- ════════════════════════════════════
+     LOADING SCREEN
+════════════════════════════════════ -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo">📚</div>
+  <div class="loader"></div>
+  <div class="loading-text">Loading Lessons...</div>
+</div>
+
 <div class="shell">
 
 <!-- ════════════════════════════════════
@@ -541,6 +596,13 @@ form.lbtn-form .lbtn{width:100%}
 </div><!-- /shell -->
 
 <script>
+// ── Loading Screen ────────────────────────────────────────
+window.addEventListener('load', function() {
+  setTimeout(() => {
+    document.getElementById('loadingScreen').classList.add('hidden');
+  }, 1100);
+});
+
 // ── Filter state ──────────────────────────────────────────
 let activeFilter = 'all';
 
