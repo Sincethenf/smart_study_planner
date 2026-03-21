@@ -251,7 +251,9 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   display:grid;place-items:center;font-size:.78rem;font-weight:700;
   color:#fff;flex-shrink:0;
   background:linear-gradient(135deg,var(--blue),var(--violet));
+  overflow:hidden;
 }
+.user-chip-avatar img{width:100%;height:100%;object-fit:cover}
 .user-chip-name{font-size:.8rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .user-chip-role{font-size:.66rem;color:var(--text3)}
 
@@ -657,7 +659,13 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 
   <div class="sidebar-footer">
     <div class="user-chip">
-      <div class="user-chip-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
+      <div class="user-chip-avatar">
+        <?php if (!empty($user['profile_picture'])): ?>
+          <img src="../assets/uploads/profiles/<?= htmlspecialchars($user['profile_picture']) ?>" alt="Profile">
+        <?php else: ?>
+          <?= strtoupper(substr($user['full_name'],0,1)) ?>
+        <?php endif; ?>
+      </div>
       <div>
         <div class="user-chip-name"><?= htmlspecialchars($user['full_name']) ?></div>
         <div class="user-chip-role">Student</div>
