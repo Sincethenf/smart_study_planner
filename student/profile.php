@@ -210,6 +210,7 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
             border-radius: 20px;
             margin-bottom: 30px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow: visible;
         }
 
         .cover-photo {
@@ -217,14 +218,11 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
             width: 100%;
             height: 220px;
             background: linear-gradient(135deg, #7b2cff 0%, #a855f7 50%, #c084fc 100%);
-            overflow: hidden;
             border-radius: 20px 20px 0 0;
+            overflow: hidden;
         }
 
         .cover-edit-btn {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
             background: rgba(0,0,0,0.45);
             color: white;
             border: none;
@@ -236,7 +234,6 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
             align-items: center;
             gap: 6px;
             transition: background 0.3s;
-            z-index: 10;
         }
 
         .cover-edit-btn:hover {
@@ -259,9 +256,9 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
             align-items: flex-end;
             gap: 20px;
             padding: 0 30px 20px 30px;
-            margin-top: -75px;
+            margin-top: -60px;
             position: relative;
-            z-index: 20;
+            z-index: 10;
         }
 
         .profile-avatar-large {
@@ -596,12 +593,12 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
                         <?php if (!empty($user['cover_photo'])): ?>
                             <img src="../assets/uploads/covers/<?php echo $user['cover_photo']; ?>" alt="Cover" class="cover-img">
                         <?php endif; ?>
-                        <form id="coverForm" method="POST" enctype="multipart/form-data">
-                            <input type="file" id="cover-input" name="cover_photo" accept="image/*" onchange="this.form.submit()">
+                        <form id="coverForm" method="POST" enctype="multipart/form-data" style="position: absolute; bottom: 15px; right: 15px; z-index: 100;">
+                            <input type="file" id="cover-input" name="cover_photo" accept="image/*" onchange="this.form.submit()" style="display: none;">
+                            <label for="cover-input" class="cover-edit-btn" style="margin: 0; display: flex;">
+                                <i class="fas fa-camera"></i> Edit Cover Photo
+                            </label>
                         </form>
-                        <button class="cover-edit-btn" onclick="document.getElementById('cover-input').click();">
-                            <i class="fas fa-camera"></i> Edit Cover Photo
-                        </button>
                     </div>
                     <div class="profile-header">
                         <div class="profile-avatar-large">
@@ -613,7 +610,7 @@ $stats['last_login'] = $user['last_login'] ? date('F d, Y', strtotime($user['las
                                 <input type="file" id="file-input" name="profile_picture" accept="image/*" onchange="this.form.submit()">
                             </form>
                         </div>
-                        <div class="profile-title">
+                        <div class="profile-title"><br><br><br>
                             <h2><?php echo htmlspecialchars($user['full_name']); ?></h2>
                             <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email']); ?></p>
                             <p><i class="fas fa-id-card"></i> Student ID: <?php echo htmlspecialchars($user['student_id']); ?></p>
