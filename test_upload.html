@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload</title>
+    <style>
+        .cover-edit {
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+            cursor: pointer;
+            display: inline-block;
+            border-radius: 5px;
+        }
+        .cover-edit:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Cover Photo Upload</h1>
+    
+    <div class="cover-edit" id="coverEditBtn">
+        Click to Upload Cover Photo
+    </div>
+    
+    <form id="coverForm" method="POST" action="student/profile.php" enctype="multipart/form-data" style="display:none">
+        <input type="file" id="cover-input" name="cover_photo" accept="image/*">
+    </form>
+    
+    <div id="status"></div>
+    
+    <script>
+        const coverEditBtn = document.getElementById('coverEditBtn');
+        const coverInput = document.getElementById('cover-input');
+        const coverForm = document.getElementById('coverForm');
+        const status = document.getElementById('status');
+        
+        console.log('coverEditBtn:', coverEditBtn);
+        console.log('coverInput:', coverInput);
+        console.log('coverForm:', coverForm);
+        
+        if (coverEditBtn && coverInput && coverForm) {
+            coverEditBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Button clicked!');
+                status.innerHTML = 'Button clicked! Opening file picker...';
+                coverInput.click();
+            });
+            
+            coverInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    console.log('File selected:', this.files[0].name);
+                    status.innerHTML = 'File selected: ' + this.files[0].name + '<br>Submitting form...';
+                    coverForm.submit();
+                }
+            });
+            
+            status.innerHTML = 'JavaScript loaded successfully. Click the button above.';
+        } else {
+            status.innerHTML = 'ERROR: Elements not found!';
+        }
+    </script>
+</body>
+</html>
