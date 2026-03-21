@@ -584,7 +584,7 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 ═══════════════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-mark">🎓</div>
+    <!-- <div class="logo-mark"></div> -->
     <div class="logo-text">
       <?php echo SITE_NAME; ?>
       <span>Student Portal</span>
