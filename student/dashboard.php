@@ -1,5 +1,4 @@
 <?php
-
 require_once '../config/database.php';
 requireLogin();
 
@@ -10,905 +9,1061 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 
-$_SESSION['full_name'] = $user['full_name'];
+$_SESSION['full_name']       = $user['full_name'];
 $_SESSION['profile_picture'] = $user['profile_picture'];
-
 $streak = $user['login_streak'];
 
-function getUserAnalytics($conn, $user_id, $days)
-{
-   $data = [];
-   $labels = [];
-
-   for ($i = $days - 1; $i >= 0; $i--) {
-      $date = date('Y-m-d', strtotime("-$i days"));
-      $labels[] = date('D, M d', strtotime($date));
-
-      $stmt = $conn->prepare("SELECT COALESCE(SUM(count), 0) as total FROM user_activity WHERE user_id = ? AND activity_date = ?");
-      $stmt->bind_param("is", $user_id, $date);
-      $stmt->execute();
-      $result = $stmt->get_result();
-      $row = $result->fetch_assoc();
-
-      $data[] = (int)$row['total'];
-   }
-
-   return ['labels' => $labels, 'data' => $data];
+function getUserAnalytics($conn, $user_id, $days) {
+    $data = []; $labels = [];
+    for ($i = $days - 1; $i >= 0; $i--) {
+        $date     = date('Y-m-d', strtotime("-$i days"));
+        $labels[] = date('D, M d', strtotime($date));
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(count),0) as total FROM user_activity WHERE user_id=? AND activity_date=?");
+        $stmt->bind_param("is", $user_id, $date);
+        $stmt->execute();
+        $data[] = (int)$stmt->get_result()->fetch_assoc()['total'];
+    }
+    return ['labels' => $labels, 'data' => $data];
 }
 
-// Get data for different time ranges
-$analytics_7d = getUserAnalytics($conn, $user_id, 7);
+$analytics_7d  = getUserAnalytics($conn, $user_id, 7);
 $analytics_14d = getUserAnalytics($conn, $user_id, 14);
 $analytics_30d = getUserAnalytics($conn, $user_id, 30);
 
-// Get activity breakdown
 $breakdown_query = $conn->prepare("
-    SELECT 
-        activity_type,
-        SUM(count) as total
-    FROM user_activity 
-    WHERE user_id = ? 
-        AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-    GROUP BY activity_type
-");
+    SELECT activity_type, SUM(count) as total
+    FROM user_activity WHERE user_id=? AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    GROUP BY activity_type");
 $breakdown_query->bind_param("i", $user_id);
 $breakdown_query->execute();
 $breakdown = $breakdown_query->get_result();
-
-$activity_types = [];
-$activity_counts = [];
-$activity_colors = ['#7b2cff', '#ff8c3a', '#00C851', '#ffbb33'];
-
+$activity_types = []; $activity_counts = [];
+$activity_colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b'];
 while ($row = $breakdown->fetch_assoc()) {
-   $activity_types[] = ucfirst($row['activity_type']);
-   $activity_counts[] = $row['total'];
+    $activity_types[]  = ucfirst($row['activity_type']);
+    $activity_counts[] = $row['total'];
 }
-
-// If no activities, add default data
 if (empty($activity_types)) {
-   $activity_types = ['Login', 'Lesson', 'Generate', 'Favorite'];
-   $activity_counts = [0, 0, 0, 0];
+    $activity_types  = ['Login','Lesson','Generate','Favorite'];
+    $activity_counts = [0,0,0,0];
 }
 
-// Get comparison with previous period
-$current_period = $conn->prepare("
-    SELECT COUNT(*) as total 
-    FROM user_activity 
-    WHERE user_id = ? 
-        AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-");
-$current_period->bind_param("i", $user_id);
-$current_period->execute();
-$current = $current_period->get_result()->fetch_assoc()['total'];
+$cp = $conn->prepare("SELECT COUNT(*) as total FROM user_activity WHERE user_id=? AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$cp->bind_param("i", $user_id); $cp->execute();
+$current = $cp->get_result()->fetch_assoc()['total'];
 
-$previous_period = $conn->prepare("
-    SELECT COUNT(*) as total 
-    FROM user_activity 
-    WHERE user_id = ? 
-        AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
-        AND activity_date < DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-");
-$previous_period->bind_param("i", $user_id);
-$previous_period->execute();
-$previous = $previous_period->get_result()->fetch_assoc()['total'];
+$pp = $conn->prepare("SELECT COUNT(*) as total FROM user_activity WHERE user_id=? AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND activity_date < DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
+$pp->bind_param("i", $user_id); $pp->execute();
+$previous = $pp->get_result()->fetch_assoc()['total'];
+$trend = $previous > 0 ? round((($current - $previous) / $previous) * 100, 1) : 100;
 
-// Calculate trend
-if ($previous > 0) {
-   $trend = round((($current - $previous) / $previous) * 100, 1);
-} else {
-   $trend = 100;
-}
+$lt = $conn->prepare("SELECT COUNT(*) as count FROM user_activity WHERE user_id=? AND activity_type='lesson'");
+$lt->bind_param("i", $user_id); $lt->execute();
+$lessons_count = $lt->get_result()->fetch_assoc()['count'];
 
-// Get total lessons
-$lessons_total = $conn->prepare("SELECT COUNT(*) as count FROM user_activity WHERE user_id = ? AND activity_type = 'lesson'");
-$lessons_total->bind_param("i", $user_id);
-$lessons_total->execute();
-$lessons_count = $lessons_total->get_result()->fetch_assoc()['count'];
+$gt = $conn->prepare("SELECT COUNT(*) as count FROM user_activity WHERE user_id=? AND activity_type='generate'");
+$gt->bind_param("i", $user_id); $gt->execute();
+$generated_count = $gt->get_result()->fetch_assoc()['count'];
 
-// Get total generated content
-$generated_total = $conn->prepare("SELECT COUNT(*) as count FROM user_activity WHERE user_id = ? AND activity_type = 'generate'");
-$generated_total->bind_param("i", $user_id);
-$generated_total->execute();
-$generated_count = $generated_total->get_result()->fetch_assoc()['count'];
-
-// Get student list
 $students = $conn->query("
-    SELECT u.id, u.full_name, u.student_id, u.profile_picture, 
+    SELECT u.id, u.full_name, u.student_id, u.profile_picture,
            r.total_points,
            RANK() OVER (ORDER BY r.total_points DESC) as rank_position
-    FROM users u
-    JOIN rankings r ON u.id = r.user_id
+    FROM users u JOIN rankings r ON u.id = r.user_id
     WHERE u.role = 'student'
-    ORDER BY r.total_points DESC
-    LIMIT 10
-");
+    ORDER BY r.total_points DESC LIMIT 10");
 
-// Get recent activity
-$recent_activity = $conn->prepare("
-    SELECT activity_type, activity_date, count
-    FROM user_activity 
-    WHERE user_id = ? 
-    ORDER BY activity_date DESC, created_at DESC
-    LIMIT 5
-");
-$recent_activity->bind_param("i", $user_id);
-$recent_activity->execute();
-$recent = $recent_activity->get_result();
+$ra = $conn->prepare("SELECT activity_type, activity_date, count FROM user_activity WHERE user_id=? ORDER BY activity_date DESC, id DESC LIMIT 5");
+$ra->bind_param("i", $user_id); $ra->execute();
+$recent = $ra->get_result();
 
-// Get daily activity for the last 7 days (for the table)
-$daily_activity = $conn->prepare("
-    SELECT activity_date, 
-           SUM(CASE WHEN activity_type = 'login' THEN count ELSE 0 END) as logins,
-           SUM(CASE WHEN activity_type = 'lesson' THEN count ELSE 0 END) as lessons,
-           SUM(CASE WHEN activity_type = 'generate' THEN count ELSE 0 END) as generates,
-           SUM(CASE WHEN activity_type = 'favorite' THEN count ELSE 0 END) as favorites,
+$da = $conn->prepare("
+    SELECT activity_date,
+           SUM(CASE WHEN activity_type='login'    THEN count ELSE 0 END) as logins,
+           SUM(CASE WHEN activity_type='lesson'   THEN count ELSE 0 END) as lessons,
+           SUM(CASE WHEN activity_type='generate' THEN count ELSE 0 END) as generates,
+           SUM(CASE WHEN activity_type='favorite' THEN count ELSE 0 END) as favorites,
            SUM(count) as total
-    FROM user_activity 
-    WHERE user_id = ? 
-        AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-    GROUP BY activity_date
-    ORDER BY activity_date DESC
-");
-$daily_activity->bind_param("i", $user_id);
-$daily_activity->execute();
-$daily = $daily_activity->get_result();
+    FROM user_activity WHERE user_id=? AND activity_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+    GROUP BY activity_date ORDER BY activity_date DESC");
+$da->bind_param("i", $user_id); $da->execute();
+$daily = $da->get_result();
+
+$current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Student Dashboard - <?php echo SITE_NAME; ?></title>
-   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-   <link rel="stylesheet" href="../assets/css/style.css">
-   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   <style>
-      /* Additional analytics styles */
-      .analytics-grid {
-         display: grid;
-         grid-template-columns: repeat(4, 1fr);
-         gap: 20px;
-         margin-bottom: 30px;
-      }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — <?php echo SITE_NAME; ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   RESET & VARIABLES
+═══════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-      .analytics-card {
-         background: var(--white);
-         border-radius: 15px;
-         padding: 20px;
-         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-         transition: transform 0.3s ease;
-      }
+:root{
+  --bg:          #07080f;
+  --bg2:         #0c0e1a;
+  --bg3:         #111320;
+  --surface:     #161929;
+  --surface2:    #1c2135;
+  --border:      rgba(255,255,255,.055);
+  --border-hi:   rgba(255,255,255,.11);
 
-      .analytics-card:hover {
-         transform: translateY(-5px);
-      }
+  --blue:        #3b82f6;
+  --blue-dim:    rgba(59,130,246,.14);
+  --violet:      #8b5cf6;
+  --violet-dim:  rgba(139,92,246,.13);
+  --emerald:     #10b981;
+  --emerald-dim: rgba(16,185,129,.13);
+  --amber:       #f59e0b;
+  --amber-dim:   rgba(245,158,11,.12);
+  --rose:        #f43f5e;
+  --rose-dim:    rgba(244,63,94,.12);
+  --cyan:        #06b6d4;
+  --cyan-dim:    rgba(6,182,212,.12);
 
-      .analytics-icon {
-         width: 50px;
-         height: 50px;
-         background: var(--light-purple);
-         border-radius: 12px;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         margin-bottom: 15px;
-      }
+  --text:        #dde2f0;
+  --text2:       #8892aa;
+  --text3:       #4a5270;
 
-      .analytics-icon i {
-         font-size: 24px;
-         color: var(--primary-purple);
-      }
+  --sidebar-w:   252px;
+  --topbar-h:    66px;
+  --radius:      14px;
+  --radius-sm:   9px;
+  --ease:        cubic-bezier(.4,0,.2,1);
+}
 
-      .analytics-value {
-         font-size: 28px;
-         font-weight: 700;
-         color: var(--dark);
-         margin-bottom: 5px;
-      }
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
 
-      .analytics-label {
-         color: var(--gray);
-         font-size: 14px;
-         margin-bottom: 10px;
-      }
+/* ═══════════════════════════════════════════════════
+   SHELL
+═══════════════════════════════════════════════════ */
+.shell{display:flex;min-height:100vh}
 
-      .trend-indicator {
-         display: inline-flex;
-         align-items: center;
-         padding: 5px 10px;
-         border-radius: 20px;
-         font-size: 12px;
-         font-weight: 500;
-      }
+/* ═══════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════ */
+.sidebar{
+  width:var(--sidebar-w);
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;inset:0 auto 0 0;
+  z-index:200;transition:transform .3s var(--ease);
+}
 
-      .trend-up {
-         background: #e6ffe9;
-         color: #00C851;
-      }
+.sidebar-logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:11px;
+}
+.logo-mark{
+  width:36px;height:36px;border-radius:9px;
+  background:linear-gradient(135deg,var(--blue),var(--violet));
+  display:grid;place-items:center;font-size:1rem;flex-shrink:0;
+  box-shadow:0 0 18px rgba(59,130,246,.25);
+}
+.logo-text{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.25}
+.logo-text span{display:block;font-weight:400;color:var(--text3);font-size:.67rem;letter-spacing:.04em}
 
-      .trend-down {
-         background: #ffe6e6;
-         color: #ff4444;
-      }
+.nav-group-label{
+  font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text3);padding:18px 20px 6px;
+}
 
-      .chart-row {
-         display: grid;
-         grid-template-columns: 2fr 1fr;
-         gap: 20px;
-         margin-bottom: 30px;
-      }
+.sidebar-nav{flex:1;overflow-y:auto;padding-bottom:12px}
 
-      .chart-container {
-         background: var(--white);
-         border-radius: 20px;
-         padding: 25px;
-         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-      }
+.nav-link{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 14px;margin:2px 8px;
+  border-radius:var(--radius-sm);
+  color:var(--text2);text-decoration:none;
+  font-size:.875rem;font-weight:500;
+  transition:all .18s var(--ease);position:relative;
+}
+.nav-link i{width:17px;text-align:center;font-size:.88rem;flex-shrink:0}
+.nav-link:hover{background:var(--surface);color:var(--text)}
+.nav-link.active{
+  background:linear-gradient(90deg,var(--blue-dim),transparent);
+  color:var(--blue);border-left:2px solid var(--blue);padding-left:12px;
+}
+.nav-link.active i{color:var(--blue)}
 
-      .chart-header {
-         display: flex;
-         justify-content: space-between;
-         align-items: center;
-         margin-bottom: 20px;
-      }
+.sidebar-footer{
+  padding:14px 8px;border-top:1px solid var(--border);
+}
+.user-chip{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--radius-sm);background:var(--surface);
+}
+.user-chip-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;font-size:.78rem;font-weight:700;
+  color:#fff;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue),var(--violet));
+}
+.user-chip-name{font-size:.8rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-chip-role{font-size:.66rem;color:var(--text3)}
 
-      .chart-header h3 {
-         color: var(--dark);
-         font-size: 18px;
-      }
+/* ═══════════════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════════════ */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
 
-      .time-range-selector {
-         display: flex;
-         gap: 10px;
-      }
+/* ── Topbar ── */
+.topbar{
+  height:var(--topbar-h);display:flex;align-items:center;
+  padding:0 28px;gap:14px;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.hamburger{
+  display:none;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);width:36px;height:36px;
+  place-items:center;color:var(--text2);cursor:pointer;font-size:.95rem;
+}
+.topbar-info{}
+.topbar-title{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
+.topbar-sub{font-size:.72rem;color:var(--text3)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.top-nav-links{display:flex;align-items:center;gap:4px}
+.top-nav-link{
+  display:flex;align-items:center;gap:6px;padding:7px 13px;
+  border-radius:var(--radius-sm);font-size:.8rem;font-weight:500;
+  color:var(--text2);text-decoration:none;transition:all .18s var(--ease);
+}
+.top-nav-link:hover{background:var(--surface);color:var(--text)}
+.top-nav-link.active{background:var(--blue-dim);color:var(--blue)}
+.top-nav-link i{font-size:.8rem}
 
-      .time-btn {
-         padding: 6px 12px;
-         border: 2px solid var(--light-purple);
-         border-radius: 8px;
-         background: var(--white);
-         color: var(--gray);
-         font-size: 13px;
-         cursor: pointer;
-         transition: all 0.3s ease;
-      }
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--border);
+  display:grid;place-items:center;color:var(--text2);
+  cursor:pointer;transition:all .18s var(--ease);
+  text-decoration:none;font-size:.88rem;position:relative;
+}
+.icon-btn:hover{border-color:var(--border-hi);color:var(--text)}
+.notif-pip{
+  position:absolute;top:7px;right:7px;width:6px;height:6px;
+  background:var(--rose);border-radius:50%;border:2px solid var(--bg2);
+}
 
-      .time-btn.active {
-         background: var(--primary-purple);
-         color: var(--white);
-         border-color: var(--primary-purple);
-      }
+.user-pill{
+  display:flex;align-items:center;gap:9px;padding:5px 14px 5px 6px;
+  border-radius:30px;background:var(--surface);border:1px solid var(--border);
+  cursor:pointer;text-decoration:none;transition:border-color .18s var(--ease);
+}
+.user-pill:hover{border-color:var(--border-hi)}
+.pill-avatar{
+  width:28px;height:28px;border-radius:50%;
+  display:grid;place-items:center;font-size:.72rem;font-weight:700;
+  color:#fff;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue),var(--violet));
+}
+.pill-name{font-size:.82rem;font-weight:600;color:var(--text)}
 
-      .time-btn:hover {
-         background: var(--light-purple);
-         color: var(--primary-purple);
-      }
+/* ═══════════════════════════════════════════════════
+   PAGE
+═══════════════════════════════════════════════════ */
+.page{flex:1;padding:26px 28px;display:flex;flex-direction:column;gap:22px}
 
-      .chart-wrapper {
-         height: 300px;
-         position: relative;
-      }
+/* ═══════════════════════════════════════════════════
+   STREAK BANNER
+═══════════════════════════════════════════════════ */
+.streak-banner{
+  background:linear-gradient(135deg,#1a1040 0%,#0f1a3d 50%,#0a1628 100%);
+  border:1px solid rgba(139,92,246,.2);
+  border-radius:var(--radius);
+  padding:20px 26px;
+  display:flex;align-items:center;gap:20px;
+  position:relative;overflow:hidden;
+  animation:slideUp .45s var(--ease) both;
+}
+.streak-banner::before{
+  content:'';position:absolute;top:-60px;right:-40px;
+  width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(139,92,246,.18) 0%,transparent 70%);
+  pointer-events:none;
+}
+.streak-flame{
+  font-size:2.6rem;filter:drop-shadow(0 0 14px rgba(251,146,60,.6));
+  animation:flicker 1.8s ease-in-out infinite alternate;
+  flex-shrink:0;
+}
+@keyframes flicker{from{transform:scale(1) rotate(-3deg)}to{transform:scale(1.08) rotate(3deg)}}
+.streak-body{}
+.streak-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:2px}
+.streak-count{
+  font-size:1.8rem;font-weight:800;letter-spacing:-.03em;
+  font-family:'JetBrains Mono',monospace;
+  background:linear-gradient(90deg,#fb923c,#f97316);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.streak-sub{font-size:.8rem;color:var(--text2);margin-top:2px}
+.streak-right{margin-left:auto;text-align:right}
+.streak-best{font-size:.72rem;color:var(--text3)}
+.streak-best span{color:var(--amber);font-weight:700;font-family:'JetBrains Mono',monospace}
 
-      .stats-mini-grid {
-         display: grid;
-         grid-template-columns: repeat(4, 1fr);
-         gap: 15px;
-         margin-top: 20px;
-         padding-top: 20px;
-         border-top: 1px solid var(--light-purple);
-      }
+/* ═══════════════════════════════════════════════════
+   STAT CARDS
+═══════════════════════════════════════════════════ */
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px 22px;
+  display:flex;flex-direction:column;gap:12px;
+  position:relative;overflow:hidden;
+  transition:transform .2s var(--ease),border-color .2s var(--ease);
+  animation:slideUp .45s var(--ease) both;
+}
+.stat-card:nth-child(1){animation-delay:.06s}
+.stat-card:nth-child(2){animation-delay:.10s}
+.stat-card:nth-child(3){animation-delay:.14s}
+.stat-card:nth-child(4){animation-delay:.18s}
+.stat-card:hover{transform:translateY(-3px);border-color:var(--border-hi)}
+.stat-card::after{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:130px;height:130px;border-radius:50%;pointer-events:none;opacity:.7;
+}
+.stat-card.c-blue::after   {background:radial-gradient(circle,var(--blue-dim),   transparent 70%)}
+.stat-card.c-violet::after {background:radial-gradient(circle,var(--violet-dim), transparent 70%)}
+.stat-card.c-emerald::after{background:radial-gradient(circle,var(--emerald-dim),transparent 70%)}
+.stat-card.c-amber::after  {background:radial-gradient(circle,var(--amber-dim),  transparent 70%)}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:grid;place-items:center;font-size:.95rem;flex-shrink:0;
+}
+.c-blue   .stat-icon{background:var(--blue-dim);   color:var(--blue)}
+.c-violet .stat-icon{background:var(--violet-dim); color:var(--violet)}
+.c-emerald .stat-icon{background:var(--emerald-dim);color:var(--emerald)}
+.c-amber  .stat-icon{background:var(--amber-dim);  color:var(--amber)}
+.trend-chip{
+  font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:20px;
+  font-family:'JetBrains Mono',monospace;
+}
+.trend-pos{background:var(--emerald-dim);color:var(--emerald)}
+.trend-neg{background:var(--rose-dim);   color:var(--rose)}
+.trend-live{background:var(--rose-dim);  color:var(--rose);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.stat-label{font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.stat-value{
+  font-size:2rem;font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-family:'JetBrains Mono',monospace;color:var(--text);
+}
+.stat-desc{font-size:.7rem;color:var(--text3)}
 
-      .stat-mini-card {
-         background: var(--light-purple);
-         border-radius: 12px;
-         padding: 15px;
-         text-align: center;
-      }
+/* ═══════════════════════════════════════════════════
+   CHARTS ROW
+═══════════════════════════════════════════════════ */
+.charts-row{display:grid;grid-template-columns:1fr 300px;gap:16px}
 
-      .stat-mini-value {
-         font-size: 20px;
-         font-weight: 600;
-         color: var(--primary-purple);
-         margin-bottom: 5px;
-      }
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px 24px;
+  animation:slideUp .5s var(--ease) .22s both;
+}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.card-title{font-size:.9rem;font-weight:700;letter-spacing:-.01em}
+.card-sub{font-size:.72rem;color:var(--text3);margin-top:2px}
 
-      .stat-mini-label {
-         font-size: 12px;
-         color: var(--gray);
-      }
+/* Time range selector */
+.time-range{display:flex;gap:6px}
+.time-btn{
+  padding:5px 12px;border-radius:var(--radius-sm);
+  background:transparent;border:1px solid var(--border);
+  font-family:'Outfit',sans-serif;font-size:.75rem;font-weight:600;
+  color:var(--text3);cursor:pointer;transition:all .18s var(--ease);
+}
+.time-btn:hover{border-color:var(--border-hi);color:var(--text2)}
+.time-btn.active{background:var(--blue-dim);border-color:var(--blue);color:var(--blue)}
 
-      .recent-activity {
-         background: var(--white);
-         border-radius: 15px;
-         padding: 20px;
-         margin-bottom: 30px;
-      }
+.chart-canvas-wrap{height:240px;position:relative;margin-bottom:18px}
 
-      .activity-item {
-         display: flex;
-         align-items: center;
-         padding: 15px 0;
-         border-bottom: 1px solid var(--light-purple);
-      }
+/* Mini stats under chart */
+.mini-row{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  padding-top:16px;border-top:1px solid var(--border);
+}
+.mini-cell{
+  background:var(--bg3);border-radius:var(--radius-sm);
+  padding:12px 10px;text-align:center;
+}
+.mini-val{
+  font-size:1.15rem;font-weight:700;color:var(--text);
+  font-family:'JetBrains Mono',monospace;margin-bottom:3px;
+}
+.mini-label{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
 
-      .activity-item:last-child {
-         border-bottom: none;
-      }
+/* Breakdown donut card */
+.donut-wrap{height:190px;position:relative;margin-bottom:16px}
+.breakdown-legend{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.legend-row{display:flex;align-items:center;justify-content:space-between;font-size:.8rem}
+.legend-left{display:flex;align-items:center;gap:8px;color:var(--text2)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.legend-val{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;color:var(--text)}
 
-      .activity-icon {
-         width: 40px;
-         height: 40px;
-         background: var(--light-purple);
-         border-radius: 10px;
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         margin-right: 15px;
-      }
+/* ═══════════════════════════════════════════════════
+   DAILY TABLE
+═══════════════════════════════════════════════════ */
+.table-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  animation:slideUp .5s var(--ease) .28s both;
+}
+.table-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 22px;border-bottom:1px solid var(--border);
+}
+table{width:100%;border-collapse:collapse}
+thead th{
+  padding:11px 22px;text-align:left;
+  font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text3);background:var(--bg3);border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s var(--ease)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg3)}
+tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:middle}
+.date-strong{font-weight:600;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.78rem}
 
-      .activity-icon i {
-         font-size: 18px;
-         color: var(--primary-purple);
-      }
+/* Activity pills */
+.act-pill{
+  display:inline-flex;align-items:center;padding:2px 9px;
+  border-radius:20px;font-size:.7rem;font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+}
+.ap-login   {background:var(--blue-dim);   color:var(--blue)}
+.ap-lesson  {background:var(--violet-dim); color:var(--violet)}
+.ap-generate{background:var(--emerald-dim);color:var(--emerald)}
+.ap-favorite{background:var(--amber-dim);  color:var(--amber)}
+.ap-total   {background:var(--border);     color:var(--text);font-weight:700}
 
-      .activity-details {
-         flex: 1;
-      }
+/* ═══════════════════════════════════════════════════
+   RECENT ACTIVITY
+═══════════════════════════════════════════════════ */
+.activity-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:22px 24px;
+  animation:slideUp .5s var(--ease) .32s both;
+}
+.activity-list{display:flex;flex-direction:column;gap:2px;margin-top:16px}
+.activity-item{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 14px;border-radius:var(--radius-sm);
+  transition:background .15s var(--ease);
+}
+.activity-item:hover{background:var(--bg3)}
+.act-icon{
+  width:36px;height:36px;border-radius:9px;
+  display:grid;place-items:center;font-size:.88rem;flex-shrink:0;
+}
+.act-body{flex:1;min-width:0}
+.act-title{font-size:.84rem;font-weight:600;color:var(--text);margin-bottom:1px}
+.act-meta{font-size:.7rem;color:var(--text3)}
+.act-count{
+  font-family:'JetBrains Mono',monospace;font-size:.8rem;
+  font-weight:700;color:var(--emerald);
+  background:var(--emerald-dim);padding:2px 8px;border-radius:20px;
+}
 
-      .activity-title {
-         font-weight: 600;
-         color: var(--dark);
-         margin-bottom: 3px;
-      }
+/* ═══════════════════════════════════════════════════
+   LEADERBOARD
+═══════════════════════════════════════════════════ */
+.leaderboard-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  animation:slideUp .5s var(--ease) .36s both;
+}
 
-      .activity-meta {
-         font-size: 12px;
-         color: var(--gray);
-      }
+.rank-medal{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;
+  font-size:.72rem;font-weight:800;font-family:'JetBrains Mono',monospace;
+}
+.rank-1{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a1000}
+.rank-2{background:linear-gradient(135deg,#cbd5e1,#94a3b8);color:#1a1a1a}
+.rank-3{background:linear-gradient(135deg,#cd7f32,#a0522d);color:#fff}
+.rank-n{background:var(--bg3);color:var(--text3)}
 
-      .activity-count {
-         font-weight: 600;
-         color: var(--primary-purple);
-      }
+.student-cell{display:flex;align-items:center;gap:10px}
+.stu-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;font-size:.78rem;font-weight:700;
+  color:#fff;flex-shrink:0;
+}
+.stu-name{font-size:.84rem;font-weight:600;color:var(--text)}
+.stu-id{font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
 
-      .badge {
-         padding: 4px 8px;
-         border-radius: 12px;
-         font-size: 11px;
-         font-weight: 500;
-         background: var(--light-purple);
-         color: var(--primary-purple);
-      }
+.pts-bar-wrap{width:80px}
+.pts-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.pts-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--violet))}
+.pts-val{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;color:var(--text);margin-top:3px}
 
-      .daily-table {
-         width: 100%;
-         border-collapse: collapse;
-         margin-top: 15px;
-      }
+.badge-champ  {background:linear-gradient(90deg,#fbbf24,#f59e0b);color:#1a1000}
+.badge-silver {background:linear-gradient(90deg,#cbd5e1,#94a3b8);color:#1a1a1a}
+.badge-bronze {background:linear-gradient(90deg,#cd7f32,#a0522d);color:#fff}
+.badge-star   {background:var(--blue-dim);color:var(--blue)}
 
-      .daily-table th {
-         background: var(--light-purple);
-         padding: 12px;
-         font-size: 13px;
-         font-weight: 600;
-         color: var(--dark);
-         text-align: left;
-      }
+.rank-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700;
+}
 
-      .daily-table td {
-         padding: 10px 12px;
-         border-bottom: 1px solid var(--light-purple);
-         font-size: 13px;
-      }
+.btn-link{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--border-hi);background:transparent;
+  color:var(--text2);font-family:'Outfit',sans-serif;
+  font-size:.78rem;font-weight:600;text-decoration:none;
+  cursor:pointer;transition:all .18s var(--ease);
+}
+.btn-link:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-dim)}
 
-      .daily-table tr:hover {
-         background: #fafafa;
-      }
+/* ═══════════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════════ */
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
 
-      .activity-badge {
-         display: inline-block;
-         padding: 3px 8px;
-         border-radius: 12px;
-         font-size: 11px;
-         font-weight: 500;
-      }
+/* ── Overlay ── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.65);z-index:199;backdrop-filter:blur(2px);
+}
 
-      .badge-login {
-         background: #e3f2fd;
-         color: #1976d2;
-      }
-
-      .badge-lesson {
-         background: #f3e5f5;
-         color: #7b1fa2;
-      }
-
-      .badge-generate {
-         background: #e8f5e9;
-         color: #388e3c;
-      }
-
-      .badge-favorite {
-         background: #fff3e0;
-         color: #f57c00;
-      }
-
-      .section-title {
-         display: flex;
-         align-items: center;
-         gap: 10px;
-         margin-bottom: 20px;
-      }
-
-      .section-title i {
-         font-size: 24px;
-         color: var(--primary-purple);
-      }
-
-      .section-title h2 {
-         color: var(--dark);
-         font-size: 22px;
-      }
-
-      .fade-in {
-         animation: fadeIn 0.5s ease-in-out;
-      }
-
-      @keyframes fadeIn {
-         from {
-            opacity: 0;
-            transform: translateY(20px);
-         }
-
-         to {
-            opacity: 1;
-            transform: translateY(0);
-         }
-      }
-   </style>
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════ */
+@media(max-width:1280px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .mini-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:1024px){
+  .charts-row{grid-template-columns:1fr}
+  .top-nav-links{display:none}
+}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .overlay.open{display:block}
+  .main{margin-left:0}
+  .hamburger{display:grid}
+  .page{padding:18px 14px}
+  .topbar{padding:0 14px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  thead th:nth-child(3),thead th:nth-child(4),
+  tbody td:nth-child(3),tbody td:nth-child(4){display:none}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr}
+}
+</style>
 </head>
-
 <body>
-   <div class="dashboard-container">
-      <!-- Sidebar -->
-      <div class="sidebar">
-         <div class="sidebar-logo">
-            <h2><?php echo SITE_NAME; ?></h2>
-         </div>
-         <ul class="sidebar-menu">
-            <li class="active"><a href="dashboard.php"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
-            <li><a href="generate.php"><i class="fas fa-magic"></i> <span>Generate</span></a></li>
-            <li><a href="lessons.php"><i class="fas fa-book"></i> <span>Lessons</span></a></li>
-            <li><a href="favorites.php"><i class="fas fa-heart"></i> <span>Favorites</span></a></li>
-            <li><a href="rankings.php"><i class="fas fa-trophy"></i> <span>Rankings</span></a></li>
-            <li><a href="profile.php"><i class="fas fa-user"></i> <span>My Profile</span></a></li>
-            <li><a href="../auth/logout.php"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
-         </ul>
+<div class="shell">
+
+<!-- ═══════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">🎓</div>
+    <div class="logo-text">
+      <?php echo SITE_NAME; ?>
+      <span>Student Portal</span>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-group-label">Main</div>
+    <a href="dashboard.php" class="nav-link <?= $current_page=='dashboard.php'?'active':'' ?>"><i class="fas fa-gauge-high"></i> Dashboard</a>
+    <a href="generate.php"  class="nav-link <?= $current_page=='generate.php' ?'active':'' ?>"><i class="fas fa-wand-magic-sparkles"></i> Generate</a>
+    <a href="lessons.php"   class="nav-link <?= $current_page=='lessons.php'  ?'active':'' ?>"><i class="fas fa-book-open"></i> Lessons</a>
+    <a href="favorites.php" class="nav-link <?= $current_page=='favorites.php'?'active':'' ?>"><i class="fas fa-heart"></i> Favorites</a>
+    <div class="nav-group-label">Community</div>
+    <a href="rankings.php"  class="nav-link <?= $current_page=='rankings.php' ?'active':'' ?>"><i class="fas fa-trophy"></i> Rankings</a>
+    <a href="forum.php"     class="nav-link <?= $current_page=='forum.php'    ?'active':'' ?>"><i class="fas fa-comments"></i> Forum</a>
+    <div class="nav-group-label">Account</div>
+    <a href="profile.php"   class="nav-link <?= $current_page=='profile.php'  ?'active':'' ?>"><i class="fas fa-user-circle"></i> My Profile</a>
+    <a href="../auth/logout.php" class="nav-link" style="color:var(--rose)"><i class="fas fa-arrow-right-from-bracket"></i> Log Out</a>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-chip">
+      <div class="user-chip-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
+      <div>
+        <div class="user-chip-name"><?= htmlspecialchars($user['full_name']) ?></div>
+        <div class="user-chip-role">Student</div>
+      </div>
+    </div>
+  </div>
+</aside>
+<div class="overlay" id="overlay"></div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN
+═══════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="hamburger" id="menuBtn"><i class="fas fa-bars"></i></button>
+
+    <div class="topbar-info">
+      <div class="topbar-title">Dashboard</div>
+      <div class="topbar-sub">Welcome back, <?= htmlspecialchars(explode(' ',$user['full_name'])[0]) ?> 👋</div>
+    </div>
+
+    <nav class="top-nav-links">
+      <a href="generate.php"  class="top-nav-link <?= $current_page=='generate.php' ?'active':'' ?>"><i class="fas fa-wand-magic-sparkles"></i> Generate</a>
+      <a href="lessons.php"   class="top-nav-link <?= $current_page=='lessons.php'  ?'active':'' ?>"><i class="fas fa-book-open"></i> Lessons</a>
+      <a href="favorites.php" class="top-nav-link <?= $current_page=='favorites.php'?'active':'' ?>"><i class="fas fa-heart"></i> Favorites</a>
+      <a href="rankings.php"  class="top-nav-link <?= $current_page=='rankings.php' ?'active':'' ?>"><i class="fas fa-trophy"></i> Rankings</a>
+    </nav>
+
+    <div class="topbar-right">
+      <a href="notifications.php" class="icon-btn"><i class="fas fa-bell"></i><span class="notif-pip"></span></a>
+      <a href="profile.php" class="user-pill">
+        <div class="pill-avatar"><?= strtoupper(substr($user['full_name'],0,1)) ?></div>
+        <span class="pill-name"><?= htmlspecialchars($user['full_name']) ?></span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Page -->
+  <div class="page">
+
+    <!-- ── STREAK BANNER ──────────────────────────── -->
+    <div class="streak-banner">
+      <div class="streak-flame">🔥</div>
+      <div class="streak-body">
+        <div class="streak-label">Login Streak</div>
+        <div class="streak-count"><?= $streak ?> Days</div>
+        <div class="streak-sub">Keep learning every day to maintain your streak!</div>
+      </div>
+      <div class="streak-right">
+        <div class="streak-best">Best streak <span><?= $streak ?> 🏆</span></div>
+      </div>
+    </div>
+
+    <!-- ── STAT CARDS ─────────────────────────────── -->
+    <div class="stats-row">
+      <div class="stat-card c-blue">
+        <div class="stat-top">
+          <div class="stat-icon"><i class="fas fa-bolt-lightning"></i></div>
+          <span class="trend-chip <?= $trend>=0?'trend-pos':'trend-neg' ?>">
+            <?= $trend>=0?'↑':'↓' ?> <?= abs($trend) ?>%
+          </span>
+        </div>
+        <div>
+          <div class="stat-label">Activities (7d)</div>
+          <div class="stat-value" data-count="<?= $current ?>">0</div>
+          <div class="stat-desc">vs previous period</div>
+        </div>
       </div>
 
-      <div class="main-content">
-         <div class="top-nav">
-            <div class="nav-menu">
-               <a href="generate.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'generate.php' ? 'active' : ''; ?>">
-                  <i class="fas fa-magic"></i> Generate
-               </a>
-               <a href="lessons.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'lessons.php' ? 'active' : ''; ?>">
-                  <i class="fas fa-book"></i> Lessons
-               </a>
-               <a href="favorites.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'favorites.php' ? 'active' : ''; ?>">
-                  <i class="fas fa-heart"></i> Favorites
-               </a>
-               <a href="rankings.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'rankings.php' ? 'active' : ''; ?>">
-                  <i class="fas fa-trophy"></i> Rankings
-               </a>
-               <a href="profile.php" class="nav-item <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
-                  <i class="fas fa-user"></i> Profile
-               </a>
-            </div>
+      <div class="stat-card c-violet">
+        <div class="stat-top">
+          <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+          <span class="trend-chip trend-pos">↑ Lessons</span>
+        </div>
+        <div>
+          <div class="stat-label">Lessons Completed</div>
+          <div class="stat-value" data-count="<?= $lessons_count ?>">0</div>
+          <div class="stat-desc">Total lesson activities</div>
+        </div>
+      </div>
 
-            <div class="user-profile" onclick="window.location.href='profile.php'" style="cursor: pointer;">
-               <div class="user-info">
-                  <h4><?php echo htmlspecialchars($user['full_name']); ?></h4>
-                  <span class="user-email"><?php echo htmlspecialchars($user['email']); ?></span>
-               </div>
-               <div class="user-avatar-wrapper">
-                  <img src="../assets/uploads/profiles/<?php echo $user['profile_picture']; ?>" alt="Profile" class="user-avatar">
-               </div>
-            </div>
-         </div>
+      <div class="stat-card c-emerald">
+        <div class="stat-top">
+          <div class="stat-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+          <span class="trend-chip trend-pos">↑ AI</span>
+        </div>
+        <div>
+          <div class="stat-label">Content Generated</div>
+          <div class="stat-value" data-count="<?= $generated_count ?>">0</div>
+          <div class="stat-desc">AI generations used</div>
+        </div>
+      </div>
 
-         <!-- Streak Card -->
-         <div class="streak-card fade-in">
-            <div class="streak-icon">
-               <i class="fas fa-fire"></i>
-            </div>
-            <div class="streak-content">
-               <h3>Login Streak</h3>
-               <div class="streak-number">🔥 <?php echo $streak; ?> Days</div>
-               <p>Keep learning every day!</p>
-            </div>
-         </div>
-         <br>
+      <div class="stat-card c-amber">
+        <div class="stat-top">
+          <div class="stat-icon"><i class="fas fa-star"></i></div>
+          <span class="trend-chip trend-live">● Live</span>
+        </div>
+        <div>
+          <div class="stat-label">Total Points</div>
+          <div class="stat-value" data-count="<?= $user['points'] ?? 0 ?>">0</div>
+          <div class="stat-desc">Ranking score</div>
+        </div>
+      </div>
+    </div>
 
-         <!-- Analytics Cards -->
-         <div class="analytics-grid fade-in">
-            <div class="analytics-card">
-               <div class="analytics-icon">
-                  <i class="fas fa-chart-line"></i>
-               </div>
-               <div class="analytics-value"><?php echo $current; ?></div>
-               <div class="analytics-label">Activities (7 days)</div>
-               <div class="trend-indicator <?php echo $trend >= 0 ? 'trend-up' : 'trend-down'; ?>">
-                  <i class="fas fa-arrow-<?php echo $trend >= 0 ? 'up' : 'down'; ?>"></i>
-                  <?php echo abs($trend); ?>% vs last period
-               </div>
-            </div>
+    <!-- ── CHARTS ──────────────────────────────────── -->
+    <div class="charts-row">
 
-            <div class="analytics-card">
-               <div class="analytics-icon">
-                  <i class="fas fa-book-open"></i>
-               </div>
-               <div class="analytics-value"><?php echo $lessons_count; ?></div>
-               <div class="analytics-label">Lessons Completed</div>
-            </div>
+      <!-- Activity line chart -->
+      <div class="chart-card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Activity Analytics</div>
+            <div class="card-sub">Daily actions over selected period</div>
+          </div>
+          <div class="time-range" id="timeRange">
+            <button class="time-btn active" onclick="switchChart(7,this)">7D</button>
+            <button class="time-btn"        onclick="switchChart(14,this)">14D</button>
+            <button class="time-btn"        onclick="switchChart(30,this)">30D</button>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="activityChart"></canvas>
+        </div>
+        <div class="mini-row">
+          <div class="mini-cell">
+            <div class="mini-val" id="miniTotal"><?= array_sum($analytics_7d['data']) ?></div>
+            <div class="mini-label">Total</div>
+          </div>
+          <div class="mini-cell">
+            <div class="mini-val" id="miniAvg"><?= count($analytics_7d['data'])>0 ? round(array_sum($analytics_7d['data'])/count($analytics_7d['data']),1) : 0 ?></div>
+            <div class="mini-label">Daily Avg</div>
+          </div>
+          <div class="mini-cell">
+            <div class="mini-val" id="miniPeak"><?= max($analytics_7d['data']) ?></div>
+            <div class="mini-label">Peak</div>
+          </div>
+          <div class="mini-cell">
+            <?php
+              $pk = max($analytics_7d['data']);
+              $pi = array_search($pk,$analytics_7d['data']);
+              $bestDay = isset($analytics_7d['labels'][$pi]) ? substr($analytics_7d['labels'][$pi],0,3) : '—';
+            ?>
+            <div class="mini-val" id="miniBest"><?= $bestDay ?></div>
+            <div class="mini-label">Best Day</div>
+          </div>
+        </div>
+      </div>
 
-            <div class="analytics-card">
-               <div class="analytics-icon">
-                  <i class="fas fa-magic"></i>
-               </div>
-               <div class="analytics-value"><?php echo $generated_count; ?></div>
-               <div class="analytics-label">Content Generated</div>
+      <!-- Breakdown donut -->
+      <div class="chart-card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Activity Breakdown</div>
+            <div class="card-sub">Last 30 days by type</div>
+          </div>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="breakdownChart"></canvas>
+        </div>
+        <div class="breakdown-legend">
+          <?php foreach($activity_types as $i=>$type): ?>
+          <div class="legend-row">
+            <div class="legend-left">
+              <span class="legend-dot" style="background:<?= $activity_colors[$i%count($activity_colors)] ?>"></span>
+              <?= $type ?>
             </div>
+            <span class="legend-val"><?= $activity_counts[$i] ?></span>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
 
-            <div class="analytics-card">
-               <div class="analytics-icon">
-                  <i class="fas fa-trophy"></i>
-               </div>
-               <div class="analytics-value"><?php echo $user['points']; ?></div>
-               <div class="analytics-label">Total Points</div>
-            </div>
-         </div>
-
-         <!-- Analytics Charts Row -->
-         <div class="chart-row fade-in">
-            <!-- Line Chart - Activity Over Time -->
-            <div class="chart-container">
-               <div class="chart-header">
-                  <h3><i class="fas fa-chart-line" style="color: var(--primary-purple);"></i> Activity Analytics</h3>
-                  <div class="time-range-selector" id="timeRangeSelector">
-                     <button class="time-btn active" onclick="updateChart(7)">7 Days</button>
-                     <button class="time-btn" onclick="updateChart(14)">14 Days</button>
-                     <button class="time-btn" onclick="updateChart(30)">30 Days</button>
-                  </div>
-               </div>
-               <div class="chart-wrapper">
-                  <canvas id="activityChart"></canvas>
-               </div>
-               <div class="stats-mini-grid" id="miniStats">
-                  <div class="stat-mini-card">
-                     <div class="stat-mini-value" id="totalActivities"><?php echo array_sum($analytics_7d['data']); ?></div>
-                     <div class="stat-mini-label">Total</div>
-                  </div>
-                  <div class="stat-mini-card">
-                     <div class="stat-mini-value" id="avgActivities"><?php
-                                                                     $avg = count($analytics_7d['data']) > 0 ? round(array_sum($analytics_7d['data']) / count($analytics_7d['data']), 1) : 0;
-                                                                     echo $avg;
-                                                                     ?></div>
-                     <div class="stat-mini-label">Daily Avg</div>
-                  </div>
-                  <div class="stat-mini-card">
-                     <div class="stat-mini-value" id="peakActivities"><?php echo max($analytics_7d['data']); ?></div>
-                     <div class="stat-mini-label">Peak</div>
-                  </div>
-                  <div class="stat-mini-card">
-                     <div class="stat-mini-value" id="bestDay"><?php
-                                                               $peak = max($analytics_7d['data']);
-                                                               $peak_index = array_search($peak, $analytics_7d['data']);
-                                                               echo $analytics_7d['labels'][$peak_index] ? substr($analytics_7d['labels'][$peak_index], 0, 3) : '-';
-                                                               ?></div>
-                     <div class="stat-mini-label">Best Day</div>
-                  </div>
-               </div>
-            </div>
-
-            <!-- Doughnut Chart - Activity Breakdown -->
-            <div class="chart-container">
-               <div class="chart-header">
-                  <h3><i class="fas fa-chart-pie" style="color: var(--primary-purple);"></i> Activity Breakdown</h3>
-               </div>
-               <div class="chart-wrapper" style="height: 250px;">
-                  <canvas id="breakdownChart"></canvas>
-               </div>
-               <div style="margin-top: 20px;">
-                  <?php foreach ($activity_types as $index => $type): ?>
-                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--light-purple);">
-                        <span>
-                           <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: <?php echo $activity_colors[$index % count($activity_colors)]; ?>; margin-right: 8px;"></span>
-                           <?php echo $type; ?>
-                        </span>
-                        <span style="font-weight: 600;"><?php echo $activity_counts[$index]; ?></span>
-                     </div>
-                  <?php endforeach; ?>
-               </div>
-            </div>
-         </div>
-
-         <!-- Daily Activity Table -->
-         <div class="chart-container fade-in">
-            <div class="section-title">
-               <i class="fas fa-calendar-alt"></i>
-               <h2>Daily Activity Breakdown (Last 7 Days)</h2>
-            </div>
-            <table class="daily-table">
-               <thead>
-                  <tr>
-                     <th>Date</th>
-                     <th>Logins</th>
-                     <th>Lessons</th>
-                     <th>Generate</th>
-                     <th>Favorites</th>
-                     <th>Total</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  <?php if ($daily->num_rows > 0): ?>
-                     <?php while ($day = $daily->fetch_assoc()): ?>
-                        <tr>
-                           <td><strong><?php echo date('M d, Y', strtotime($day['activity_date'])); ?></strong></td>
-                           <td><span class="activity-badge badge-login"><?php echo $day['logins']; ?></span></td>
-                           <td><span class="activity-badge badge-lesson"><?php echo $day['lessons']; ?></span></td>
-                           <td><span class="activity-badge badge-generate"><?php echo $day['generates']; ?></span></td>
-                           <td><span class="activity-badge badge-favorite"><?php echo $day['favorites']; ?></span></td>
-                           <td><strong><?php echo $day['total']; ?></strong></td>
-                        </tr>
-                     <?php endwhile; ?>
-                  <?php else: ?>
-                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 30px; color: var(--gray);">
-                           No activity data available for the last 7 days.
-                        </td>
-                     </tr>
-                  <?php endif; ?>
-               </tbody>
-            </table>
-         </div>
-
-         <!-- Recent Activity -->
-         <div class="recent-activity fade-in">
-            <div class="section-title">
-               <i class="fas fa-history"></i>
-               <h2>Recent Activity</h2>
-            </div>
-            <?php if ($recent->num_rows > 0): ?>
-               <?php while ($activity = $recent->fetch_assoc()): ?>
-                  <div class="activity-item">
-                     <div class="activity-icon">
-                        <i class="fas fa-<?php
-                                          echo $activity['activity_type'] == 'login' ? 'sign-in-alt' : ($activity['activity_type'] == 'lesson' ? 'book' : ($activity['activity_type'] == 'generate' ? 'magic' : 'heart'));
-                                          ?>"></i>
-                     </div>
-                     <div class="activity-details">
-                        <div class="activity-title">
-                           <?php echo ucfirst($activity['activity_type']); ?> Activity
-                        </div>
-                        <div class="activity-meta">
-                           <?php echo date('M d, Y', strtotime($activity['activity_date'])); ?>
-                           <span class="badge"><?php echo $activity['count']; ?> actions</span>
-                        </div>
-                     </div>
-                     <div class="activity-count">
-                        +<?php echo $activity['count']; ?>
-                     </div>
-                  </div>
-               <?php endwhile; ?>
+    <!-- ── DAILY BREAKDOWN TABLE ───────────────────── -->
+    <div class="table-card">
+      <div class="table-top">
+        <div>
+          <div class="card-title">Daily Activity — Last 7 Days</div>
+          <div class="card-sub">Breakdown by activity type per day</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Logins</th>
+              <th>Lessons</th>
+              <th>Generate</th>
+              <th>Favorites</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if($daily->num_rows > 0): ?>
+              <?php while($day = $daily->fetch_assoc()): ?>
+              <tr>
+                <td><span class="date-strong"><?= date('d M Y',strtotime($day['activity_date'])) ?></span></td>
+                <td><span class="act-pill ap-login"><?= $day['logins'] ?></span></td>
+                <td><span class="act-pill ap-lesson"><?= $day['lessons'] ?></span></td>
+                <td><span class="act-pill ap-generate"><?= $day['generates'] ?></span></td>
+                <td><span class="act-pill ap-favorite"><?= $day['favorites'] ?></span></td>
+                <td><span class="act-pill ap-total"><?= $day['total'] ?></span></td>
+              </tr>
+              <?php endwhile; ?>
             <?php else: ?>
-               <p style="text-align: center; color: var(--gray); padding: 30px;">
-                  <i class="fas fa-info-circle"></i> No recent activity. Start learning to see your activity here!
-               </p>
+              <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">
+                <i class="fas fa-circle-info"></i> No activity in the last 7 days.
+              </td></tr>
             <?php endif; ?>
-         </div>
-
-         <!-- Student List -->
-         <div class="table-container fade-in">
-            <div class="table-header">
-               <h3><i class="fas fa-users"></i> Top Students Leaderboard</h3>
-               <a href="rankings.php" class="btn btn-secondary">View All</a>
-            </div>
-            <div class="table-responsive">
-               <table>
-                  <thead>
-                     <tr>
-                        <th>Rank</th>
-                        <th>Student</th>
-                        <th>ID</th>
-                        <th>Points</th>
-                        <th>Progress</th>
-                        <th>Badge</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     <?php
-                     $rank = 1;
-                     while ($student = $students->fetch_assoc()):
-                     ?>
-                        <tr>
-                           <td>
-                              <span class="rank-badge rank-<?php echo $rank; ?>">#<?php echo $rank; ?></span>
-                           </td>
-                           <td>
-                              <div class="student-info">
-                                 <div class="student-avatar">
-                                    <?php echo strtoupper(substr($student['full_name'], 0, 1)); ?>
-                                 </div>
-                                 <?php echo htmlspecialchars($student['full_name']); ?>
-                              </div>
-                           </td>
-                           <td><?php echo htmlspecialchars($student['student_id']); ?></td>
-                           <td><strong><?php echo $student['total_points']; ?></strong> pts</td>
-                           <td>
-                              <div class="progress-bar">
-                                 <div class="progress-fill" style="width: <?php echo min(100, ($student['total_points'] / 300) * 100); ?>%"></div>
-                              </div>
-                           </td>
-                           <td>
-                              <?php if ($rank == 1): ?>
-                                 <span class="badge" style="background: gold; color: #333;">🥇 Champion</span>
-                              <?php elseif ($rank == 2): ?>
-                                 <span class="badge" style="background: silver; color: #333;">🥈 Silver</span>
-                              <?php elseif ($rank == 3): ?>
-                                 <span class="badge" style="background: #cd7f32; color: #fff;">🥉 Bronze</span>
-                              <?php else: ?>
-                                 <span class="badge">⭐ Rising Star</span>
-                              <?php endif; ?>
-                           </td>
-                        </tr>
-                     <?php
-                        $rank++;
-                     endwhile;
-                     ?>
-                  </tbody>
-               </table>
-            </div>
-         </div>
+          </tbody>
+        </table>
       </div>
-   </div>
+    </div>
 
-   <script>
-      // Store all chart data
-      const chartData = {
-         '7': {
-            labels: <?php echo json_encode($analytics_7d['labels']); ?>,
-            data: <?php echo json_encode($analytics_7d['data']); ?>
-         },
-         '14': {
-            labels: <?php echo json_encode($analytics_14d['labels']); ?>,
-            data: <?php echo json_encode($analytics_14d['data']); ?>
-         },
-         '30': {
-            labels: <?php echo json_encode($analytics_30d['labels']); ?>,
-            data: <?php echo json_encode($analytics_30d['data']); ?>
-         }
-      };
+    <!-- ── RECENT ACTIVITY ─────────────────────────── -->
+    <div class="activity-card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Recent Activity</div>
+          <div class="card-sub">Your last 5 recorded actions</div>
+        </div>
+      </div>
+      <div class="activity-list">
+        <?php
+        $actIcons  = ['login'=>'fa-arrow-right-to-bracket','lesson'=>'fa-book-open','generate'=>'fa-wand-magic-sparkles','favorite'=>'fa-heart'];
+        $actColors = ['login'=>'var(--blue-dim)','lesson'=>'var(--violet-dim)','generate'=>'var(--emerald-dim)','favorite'=>'var(--amber-dim)'];
+        $actText   = ['login'=>'var(--blue)','lesson'=>'var(--violet)','generate'=>'var(--emerald)','favorite'=>'var(--amber)'];
+        if($recent->num_rows > 0):
+          while($act = $recent->fetch_assoc()):
+            $t = $act['activity_type'];
+            $bg  = $actColors[$t] ?? 'var(--surface2)';
+            $clr = $actText[$t]   ?? 'var(--text2)';
+            $ico = $actIcons[$t]  ?? 'fa-circle';
+        ?>
+        <div class="activity-item">
+          <div class="act-icon" style="background:<?=$bg?>;color:<?=$clr?>">
+            <i class="fas <?=$ico?>"></i>
+          </div>
+          <div class="act-body">
+            <div class="act-title"><?= ucfirst($t) ?> Activity</div>
+            <div class="act-meta"><?= date('M d, Y',strtotime($act['activity_date'])) ?></div>
+          </div>
+          <span class="act-count">+<?= $act['count'] ?></span>
+        </div>
+        <?php endwhile; else: ?>
+        <div style="text-align:center;padding:32px;color:var(--text3);font-size:.875rem">
+          <i class="fas fa-circle-info"></i> No recent activity. Start learning to see it here!
+        </div>
+        <?php endif; ?>
+      </div>
+    </div>
 
-      // Initialize activity chart
-      const ctx = document.getElementById('activityChart').getContext('2d');
-      let activityChart = new Chart(ctx, {
-         type: 'line',
-         data: {
-            labels: <?php echo json_encode($analytics_7d['labels']); ?>,
-            datasets: [{
-               label: 'Daily Activities',
-               data: <?php echo json_encode($analytics_7d['data']); ?>,
-               borderColor: '#7b2cff',
-               backgroundColor: 'rgba(123, 44, 255, 0.1)',
-               borderWidth: 3,
-               pointBackgroundColor: '#7b2cff',
-               pointBorderColor: '#fff',
-               pointBorderWidth: 2,
-               pointRadius: 5,
-               pointHoverRadius: 7,
-               tension: 0.3,
-               fill: true
-            }]
-         },
-         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-               legend: {
-                  display: false
-               },
-               tooltip: {
-                  backgroundColor: '#fff',
-                  titleColor: '#333',
-                  bodyColor: '#666',
-                  borderColor: '#7b2cff',
-                  borderWidth: 1,
-                  padding: 10,
-                  displayColors: false
-               }
-            },
-            scales: {
-               y: {
-                  beginAtZero: true,
-                  grid: {
-                     color: 'rgba(0,0,0,0.05)'
-                  },
-                  ticks: {
-                     stepSize: 1
-                  }
-               },
-               x: {
-                  grid: {
-                     display: false
-                  }
-               }
-            }
-         }
-      });
+    <!-- ── LEADERBOARD ────────────────────────────── -->
+    <div class="leaderboard-card">
+      <div class="table-top">
+        <div>
+          <div class="card-title">🏆 Top Students Leaderboard</div>
+          <div class="card-sub">Ranked by total points earned</div>
+        </div>
+        <a href="rankings.php" class="btn-link"><i class="fas fa-arrow-up-right-from-square"></i> View All</a>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Student</th>
+              <th>Student ID</th>
+              <th>Points</th>
+              <th>Progress</th>
+              <th>Badge</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $avatarColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#f43f5e','#06b6d4','#ec4899','#84cc16'];
+            $rank=1;
+            while($s = $students->fetch_assoc()):
+              $rClass = $rank==1?'rank-1':($rank==2?'rank-2':($rank==3?'rank-3':'rank-n'));
+              $bClass = $rank==1?'badge-champ':($rank==2?'badge-silver':($rank==3?'badge-bronze':'badge-star'));
+              $bLabel = $rank==1?'🥇 Champion':($rank==2?'🥈 Silver':($rank==3?'🥉 Bronze':'⭐ Rising'));
+              $barPct = min(100, ($s['total_points']/max(1,300))*100);
+              $aClr   = $avatarColors[($rank-1)%count($avatarColors)];
+            ?>
+            <tr>
+              <td><span class="rank-medal <?=$rClass?>"><?=$rank?></span></td>
+              <td>
+                <div class="student-cell">
+                  <div class="stu-avatar" style="background:<?=$aClr?>"><?=strtoupper(substr($s['full_name'],0,1))?></div>
+                  <div>
+                    <div class="stu-name"><?=htmlspecialchars($s['full_name'])?></div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="stu-id"><?=htmlspecialchars($s['student_id']??'—')?></span></td>
+              <td>
+                <div class="pts-bar-wrap">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:4px"><?=$s['total_points']?> <span style="color:var(--text3);font-weight:400">pts</span></div>
+                  <div class="pts-bar"><div class="pts-fill" style="width:<?=$barPct?>%"></div></div>
+                </div>
+              </td>
+              <td>
+                <div class="pts-bar" style="width:80px">
+                  <div class="pts-fill" style="width:<?=$barPct?>%"></div>
+                </div>
+              </td>
+              <td><span class="rank-badge <?=$bClass?>"><?=$bLabel?></span></td>
+            </tr>
+            <?php $rank++; endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-      // Initialize breakdown chart
-      const ctx2 = document.getElementById('breakdownChart').getContext('2d');
-      new Chart(ctx2, {
-         type: 'doughnut',
-         data: {
-            labels: <?php echo json_encode($activity_types); ?>,
-            datasets: [{
-               data: <?php echo json_encode($activity_counts); ?>,
-               backgroundColor: ['#7b2cff', '#ff8c3a', '#00C851', '#ffbb33'],
-               borderWidth: 0,
-               hoverOffset: 5
-            }]
-         },
-         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-               legend: {
-                  position: 'bottom',
-                  labels: {
-                     usePointStyle: true,
-                     padding: 20,
-                     font: {
-                        size: 12
-                     }
-                  }
-               }
-            },
-            cutout: '60%'
-         }
-      });
+  </div><!-- /page -->
+</div><!-- /main -->
+</div><!-- /shell -->
 
-      // Update chart function (no API call - uses preloaded data)
-      function updateChart(days) {
-         // Update active button
-         document.querySelectorAll('.time-btn').forEach(btn => {
-            btn.classList.remove('active');
-         });
-         event.target.classList.add('active');
+<script>
+// ── Chart defaults ────────────────────────────────────────
+Chart.defaults.color = '#4a5270';
+Chart.defaults.font.family = 'Outfit';
 
-         // Get data for selected days
-         const data = chartData[days.toString()];
+// ── All period data (no API needed) ──────────────────────
+const allData = {
+  7:  { labels: <?= json_encode($analytics_7d['labels'])  ?>, data: <?= json_encode($analytics_7d['data'])  ?> },
+  14: { labels: <?= json_encode($analytics_14d['labels']) ?>, data: <?= json_encode($analytics_14d['data']) ?> },
+  30: { labels: <?= json_encode($analytics_30d['labels']) ?>, data: <?= json_encode($analytics_30d['data']) ?> },
+};
 
-         // Update chart
-         activityChart.data.labels = data.labels;
-         activityChart.data.datasets[0].data = data.data;
-         activityChart.update();
+// ── Activity line chart ───────────────────────────────────
+const actCtx  = document.getElementById('activityChart').getContext('2d');
+const actGrad = actCtx.createLinearGradient(0, 0, 0, 240);
+actGrad.addColorStop(0, 'rgba(59,130,246,.22)');
+actGrad.addColorStop(1, 'rgba(59,130,246,.00)');
 
-         // Update mini stats
-         const total = data.data.reduce((a, b) => a + b, 0);
-         const avg = (total / data.data.length).toFixed(1);
-         const peak = Math.max(...data.data);
-         const peakIndex = data.data.indexOf(peak);
-
-         document.getElementById('totalActivities').textContent = total;
-         document.getElementById('avgActivities').textContent = avg;
-         document.getElementById('peakActivities').textContent = peak;
-         document.getElementById('bestDay').textContent = data.labels[peakIndex] ? data.labels[peakIndex].substring(0, 3) : '-';
+const actChart = new Chart(actCtx, {
+  type: 'line',
+  data: {
+    labels: allData[7].labels,
+    datasets: [{
+      label: 'Activities',
+      data: allData[7].data,
+      borderColor: '#3b82f6',
+      backgroundColor: actGrad,
+      borderWidth: 2.5,
+      fill: true,
+      tension: 0.42,
+      pointBackgroundColor: '#3b82f6',
+      pointBorderColor: '#07080f',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 7,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1c2135',
+        titleColor: '#dde2f0',
+        bodyColor: '#8892aa',
+        padding: 12, cornerRadius: 10,
+        callbacks: { label: c => '  ' + c.parsed.y + ' actions' }
       }
-   </script>
-</body>
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 10 }, maxRotation: 0, maxTicksLimit: 7 } },
+      y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
+    }
+  }
+});
 
+// ── Time range switch ─────────────────────────────────────
+function switchChart(days, btn) {
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const d = allData[days];
+  actChart.data.labels              = d.labels;
+  actChart.data.datasets[0].data   = d.data;
+  actChart.update('active');
+
+  const total = d.data.reduce((a,b) => a+b, 0);
+  const avg   = d.data.length ? (total/d.data.length).toFixed(1) : 0;
+  const peak  = Math.max(...d.data);
+  const best  = d.labels[d.data.indexOf(peak)]?.substring(0,3) ?? '—';
+
+  document.getElementById('miniTotal').textContent = total;
+  document.getElementById('miniAvg').textContent   = avg;
+  document.getElementById('miniPeak').textContent  = peak;
+  document.getElementById('miniBest').textContent  = best;
+}
+
+// ── Breakdown donut ───────────────────────────────────────
+new Chart(document.getElementById('breakdownChart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: <?= json_encode($activity_types) ?>,
+    datasets: [{
+      data: <?= json_encode($activity_counts) ?>,
+      backgroundColor: ['#3b82f6','#8b5cf6','#10b981','#f59e0b'],
+      hoverBackgroundColor: ['#60a5fa','#a78bfa','#34d399','#fbbf24'],
+      borderColor: '#161929',
+      borderWidth: 3,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1c2135',
+        titleColor: '#dde2f0',
+        bodyColor: '#8892aa',
+        padding: 12, cornerRadius: 10,
+      }
+    }
+  }
+});
+
+// ── Count-up animation ────────────────────────────────────
+document.querySelectorAll('.stat-value[data-count]').forEach(el => {
+  const target = parseInt(el.dataset.count, 10);
+  if (!target) { el.textContent = '0'; return; }
+  let cur = 0;
+  const step = Math.max(1, Math.ceil(target / 45));
+  const t = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.textContent = cur;
+    if (cur >= target) clearInterval(t);
+  }, 28);
+});
+
+// ── Mobile sidebar ────────────────────────────────────────
+const sidebar  = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+const menuBtn  = document.getElementById('menuBtn');
+menuBtn?.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('open');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+});
+</script>
+</body>
 </html>
