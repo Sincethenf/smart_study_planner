@@ -154,7 +154,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .shell{display:flex;min-height:100vh}
 .sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:200;transition:transform .3s var(--ease)}
 .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px}
-.logo-mark{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--violet));display:grid;place-items:center;font-size:1rem;box-shadow:0 0 18px rgba(59,130,246,.25)}
 .logo-text{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.25}
 .logo-text span{display:block;font-weight:400;color:var(--text3);font-size:.67rem;letter-spacing:.04em}
 .nav-group-label{font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:18px 20px 6px}
@@ -348,7 +347,6 @@ form.lbtn-form .lbtn{width:100%}
 ════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-mark">🎓</div>
     <div class="logo-text"><?php echo SITE_NAME; ?><span>Student Portal</span></div>
   </div>
   <div class="sidebar-nav">

@@ -223,7 +223,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 ════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-mark">🎓</div>
     <div class="logo-text"><?php echo SITE_NAME; ?><span>Student Portal</span></div>
   </div>
   <div class="sidebar-nav">
