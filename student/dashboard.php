@@ -1,5 +1,6 @@
 <?php
 require_once '../config/database.php';
+require_once '../includes/notifications.php';
 requireLogin();
 
 $user_id = $_SESSION['user_id'];
@@ -90,6 +91,9 @@ $da->bind_param("i", $user_id); $da->execute();
 $daily = $da->get_result();
 
 $current_page = basename($_SERVER['PHP_SELF']);
+
+// Get unread notification count
+$unread_notifications = getUnreadNotificationCount($conn, $user_id);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -297,8 +301,10 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 }
 .icon-btn:hover{border-color:var(--border-hi);color:var(--text)}
 .notif-pip{
-  position:absolute;top:7px;right:7px;width:6px;height:6px;
+  position:absolute;top:7px;right:7px;width:16px;height:16px;
   background:var(--rose);border-radius:50%;border:2px solid var(--bg2);
+  color:#fff;font-size:.65rem;font-weight:700;display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;
 }
 
 .user-pill{
@@ -697,7 +703,7 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
     </nav>
 
     <div class="topbar-right">
-      <a href="notifications.php" class="icon-btn"><i class="fas fa-bell"></i><span class="notif-pip"></span></a>
+      <?php include '../includes/notification_dropdown.php'; ?>
       <a href="profile.php" class="user-pill">
         <div class="pill-avatar">
           <?php if (!empty($user['profile_picture'])): ?>

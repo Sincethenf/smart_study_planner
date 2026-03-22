@@ -85,6 +85,13 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
 // ── 2. Toggle like ───────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['action']==='toggle_like') {
     $pid = (int)$_POST['post_id'];
+    
+    // Get the post owner
+    $post_owner = $conn->prepare("SELECT user_id FROM feed_posts WHERE id = ?");
+    $post_owner->bind_param("i", $pid);
+    $post_owner->execute();
+    $post_owner_id = $post_owner->get_result()->fetch_assoc()['user_id'];
+    
     $chk = $conn->prepare("SELECT id FROM feed_likes WHERE post_id=? AND user_id=?");
     $chk->bind_param("ii",$pid,$user_id); $chk->execute(); $chk->store_result();
     if ($chk->num_rows > 0) {
@@ -94,11 +101,25 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
         $del->bind_param("ii",$pid,$user_id); $del->execute();
         $conn->query("UPDATE feed_posts SET like_count=GREATEST(0,like_count-1) WHERE id=$pid");
         $liked = false;
+        
+        // Remove notification when unliking
+        if ($post_owner_id && $post_owner_id != $user_id) {
+            $del_notif = $conn->prepare("DELETE FROM notifications WHERE user_id=? AND sender_id=? AND type='like' AND related_id=? AND related_type='post'");
+            $del_notif->bind_param("iii", $post_owner_id, $user_id, $pid);
+            $del_notif->execute();
+        }
     } else {
         $ins = $conn->prepare("INSERT INTO feed_likes (post_id,user_id) VALUES (?,?)");
         $ins->bind_param("ii",$pid,$user_id); $ins->execute();
         $conn->query("UPDATE feed_posts SET like_count=like_count+1 WHERE id=$pid");
         $liked = true;
+        
+        // Create notification when liking someone else's post
+        if ($post_owner_id && $post_owner_id != $user_id) {
+            $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'like', '{sender} liked your post', ?, 'post')");
+            $notif_stmt->bind_param("iii", $post_owner_id, $user_id, $pid);
+            $notif_stmt->execute();
+        }
     }
     $cnt = (int)$conn->query("SELECT like_count FROM feed_posts WHERE id=$pid")->fetch_assoc()['like_count'];
     jsonOut(['ok'=>true,'liked'=>$liked,'count'=>$cnt]);
@@ -109,11 +130,26 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     $pid     = (int)$_POST['post_id'];
     $content = sanitize($conn, trim((!empty($_POST['content']) ? $_POST['content'] : '')));
     if (empty($content)) jsonOut(['ok'=>false,'error'=>'Comment cannot be empty.']);
+    
+    // Get the post owner to notify them
+    $post_owner = $conn->prepare("SELECT user_id FROM feed_posts WHERE id = ?");
+    $post_owner->bind_param("i", $pid);
+    $post_owner->execute();
+    $post_owner_id = $post_owner->get_result()->fetch_assoc()['user_id'];
+    
     $st = $conn->prepare("INSERT INTO feed_comments (post_id,user_id,content) VALUES (?,?,?)");
     $st->bind_param("iis",$pid,$user_id,$content);
     if ($st->execute()) {
         $cid = (int)$conn->insert_id;
         $conn->query("UPDATE feed_posts SET comment_count=comment_count+1 WHERE id=$pid");
+        
+        // Create notification if commenting on someone else's post
+        if ($post_owner_id && $post_owner_id != $user_id) {
+            $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'comment', '{sender} commented on your post', ?, 'post')");
+            $notif_stmt->bind_param("iii", $post_owner_id, $user_id, $pid);
+            $notif_stmt->execute();
+        }
+        
         // Return rendered HTML of new comment
         $new_cnt = (int)$conn->query("SELECT comment_count FROM feed_posts WHERE id=$pid")->fetch_assoc()['comment_count'];
         jsonOut(['ok'=>true,'comment_id'=>$cid,'comment_count'=>$new_cnt,
@@ -129,14 +165,29 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     $cid     = (int)$_POST['comment_id'];
     $content = sanitize($conn, trim((!empty($_POST['content']) ? $_POST['content'] : '')));
     if (empty($content)) jsonOut(['ok'=>false,'error'=>'Reply cannot be empty.']);
+    
+    // Get the comment owner to notify them
+    $comment_owner = $conn->prepare("SELECT user_id FROM feed_comments WHERE id = ?");
+    $comment_owner->bind_param("i", $cid);
+    $comment_owner->execute();
+    $comment_owner_id = $comment_owner->get_result()->fetch_assoc()['user_id'];
+    
     $st = $conn->prepare("INSERT INTO feed_replies (comment_id,user_id,content) VALUES (?,?,?)");
     $st->bind_param("iis",$cid,$user_id,$content);
     if ($st->execute()) {
         $rid = (int)$conn->insert_id;
+        
+        // Create notification if replying to someone else's comment
+        if ($comment_owner_id && $comment_owner_id != $user_id) {
+            $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'reply', '{sender} replied to your comment', ?, 'comment')");
+            $notif_stmt->bind_param("iii", $comment_owner_id, $user_id, $cid);
+            $notif_stmt->execute();
+        }
+        
         jsonOut(['ok'=>true,'reply_id'=>$rid,
             'html'=>renderReply(['id'=>$rid,'content'=>$content,'user_id'=>$user_id,
                 'full_name'=>$user['full_name'],'avatar_color'=>(!empty($user['avatar_color']) ? $user['avatar_color'] : '#3b82f6'),
-                'role'=>$user['role'],'created_at'=>date('Y-m-d H:i:s')], $user_id)]);
+                'role'=>$user['role'],'created_at'=>date('Y-m-d H:i:s')], $user_id, $cid)]);
     }
     jsonOut(['ok'=>false,'error'=>'Failed to post reply.']);
 }
@@ -236,7 +287,7 @@ function fetchReplies(mysqli $conn, int $comment_id, int $user_id): array {
     return $replies;
 }
 
-function renderReply(array $r, int $me): string {
+function renderReply(array $r, int $me, int $comment_id): string {
     $aclr = htmlspecialchars((!empty($r['avatar_color']) ? $r['avatar_color'] : '#3b82f6'));
     $init = strtoupper(substr($r['full_name'],0,1));
     $name = htmlspecialchars($r['full_name']);
@@ -249,11 +300,16 @@ function renderReply(array $r, int $me): string {
     return "
     <div class='reply-item' id='reply-$rid'>
       <div class='reply-av' style='background:$aclr'>$init</div>
-      <div class='reply-bubble'>
-        <div class='reply-meta'><span class='reply-name'>$name</span><span class='reply-role'>$role</span><span class='reply-time'>$time</span></div>
-        <div class='reply-text'>$body</div>
+      <div class='reply-right'>
+        <div class='reply-bubble'>
+          <div class='reply-meta'><span class='reply-name'>$name</span><span class='reply-role'>$role</span><span class='reply-time'>$time</span></div>
+          <div class='reply-text'>$body</div>
+        </div>
+        <div class='reply-actions'>
+          <button class='toggle-reply-btn action-link' data-cid='$comment_id'><i class='fas fa-reply'></i> Reply</button>
+          $del
+        </div>
       </div>
-      $del
     </div>";
 }
 
@@ -268,7 +324,7 @@ function renderComment(array $c, int $me): string {
     $mine     = ((int)$c['user_id'] === $me);
     $del      = $mine ? "<button class='del-comment-btn action-micro' data-id='$cid' data-post-id='{$c['post_id']}' title='Delete'><i class='fas fa-trash'></i></button>" : '';
     $replies  = '';
-    if (!empty($c['replies'])) foreach ($c['replies'] as $rep) $replies .= renderReply($rep, $me);
+    if (!empty($c['replies'])) foreach ($c['replies'] as $rep) $replies .= renderReply($rep, $me, $cid);
     return "
     <div class='comment-item' id='comment-$cid'>
       <div class='comment-av' style='background:$aclr'>$init</div>
@@ -348,7 +404,7 @@ function renderPost(array $p, int $me): string {
       <span class='comment-count'>$comments</span>
     </button>
   </div>
-  <div class='post-comments' id='comments-$pid'>
+  <div class='post-comments' id='comments-$pid' style='display:none'>
     <div class='comments-list' id='comments-list-$pid'>$comments_html</div>
     <div class='comment-input-row'>
       <div class='comment-av' style='background:$meAv'>$meInit</div>
@@ -399,7 +455,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 /* ── Sidebar ── */
 .sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:200;transition:transform .3s var(--ease)}
 .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px}
-.logo-mark{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--violet));display:grid;place-items:center;font-size:1rem;box-shadow:0 0 18px rgba(59,130,246,.25)}
 .logo-text{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.25}
 .logo-text span{display:block;font-weight:400;color:var(--text3);font-size:.67rem}
 .nav-group-label{font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:18px 20px 6px}
@@ -422,8 +477,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .topbar-title{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
 .topbar-sub{font-size:.72rem;color:var(--text3)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text2);cursor:pointer;transition:all .18s var(--ease);text-decoration:none;font-size:.88rem}
+.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text2);cursor:pointer;transition:all .18s var(--ease);text-decoration:none;font-size:.88rem;position:relative}
 .icon-btn:hover{border-color:var(--border-hi);color:var(--text)}
+.icon-btn.active{background:var(--cyan-dim);color:var(--cyan);border-color:var(--cyan)}
+#toggleFilterBtn{display:none}
+.notif-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--rose);color:#fff;font-size:.6rem;font-weight:700;display:grid;place-items:center;border:2px solid var(--bg2);font-family:'JetBrains Mono',monospace}
 .user-pill{display:flex;align-items:center;gap:9px;padding:5px 14px 5px 6px;border-radius:30px;background:var(--surface);border:1px solid var(--border);cursor:pointer;text-decoration:none;transition:border-color .18s var(--ease)}
 .user-pill:hover{border-color:var(--border-hi)}
 .pill-av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--violet))}
@@ -567,12 +625,14 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .replies-wrap{display:flex;flex-direction:column;gap:7px;margin-top:7px;padding-left:14px;border-left:2px solid var(--border)}
 .reply-item{display:flex;align-items:flex-start;gap:8px}
 .reply-av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.62rem;font-weight:700;color:#fff;flex-shrink:0}
-.reply-bubble{flex:1;background:var(--bg3);border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:8px 11px;border:1px solid var(--border)}
+.reply-right{flex:1;min-width:0}
+.reply-bubble{background:var(--bg3);border-radius:0 var(--radius-sm) var(--radius-sm) var(--radius-sm);padding:8px 11px;border:1px solid var(--border)}
 .reply-meta{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap}
 .reply-name{font-size:.76rem;font-weight:700;color:var(--text)}
 .reply-role{font-size:.62rem;color:var(--text3);text-transform:capitalize}
 .reply-time{font-size:.62rem;color:var(--text3);margin-left:auto;font-family:'JetBrains Mono',monospace}
 .reply-text{font-size:.8rem;color:var(--text2);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.reply-actions{display:flex;align-items:center;gap:10px;margin-top:5px;padding-left:2px}
 
 /* Reply input */
 .reply-form-wrap{margin-top:8px;padding-left:14px}
@@ -600,10 +660,36 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .toast.success{border-color:rgba(16,185,129,.25);color:var(--emerald)}
 @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
+/* Notification Dropdown */
+.notif-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:360px;max-height:480px;background:var(--surface);border:1px solid var(--border-hi);border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:1000;display:none;flex-direction:column;animation:dropIn .25s var(--ease)}
+.notif-dropdown.open{display:flex}
+@keyframes dropIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.notif-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.notif-header-title{font-size:.9rem;font-weight:700;color:var(--text)}
+.notif-header-count{font-size:.72rem;color:var(--text3);margin-left:6px}
+.notif-mark-all{background:none;border:none;color:var(--blue);font-size:.72rem;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .15s}
+.notif-mark-all:hover{background:var(--blue-dim)}
+.notif-body{flex:1;overflow-y:auto;max-height:380px}
+.notif-item-small{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;position:relative}
+.notif-item-small:hover{background:var(--bg3)}
+.notif-item-small.unread{background:var(--blue-dim)}
+.notif-item-small.unread::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue)}
+.notif-av-small{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0}
+.notif-content-small{flex:1;min-width:0}
+.notif-text-small{font-size:.8rem;color:var(--text);line-height:1.5;margin-bottom:3px}
+.notif-text-small strong{color:var(--blue);font-weight:600}
+.notif-time-small{font-size:.68rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.notif-footer{padding:10px 16px;border-top:1px solid var(--border);text-align:center}
+.notif-view-all{display:inline-block;padding:6px 12px;font-size:.78rem;font-weight:600;color:var(--blue);text-decoration:none;border-radius:6px;transition:background .15s}
+.notif-view-all:hover{background:var(--blue-dim)}
+.notif-empty{padding:40px 20px;text-align:center;color:var(--text3)}
+.notif-empty i{font-size:2rem;margin-bottom:12px;opacity:.5}
+
 /* ════════════════════════════════════════
    RIGHT SIDEBAR
 ════════════════════════════════════════ */
-.right-col{display:flex;flex-direction:column;gap:16px;position:sticky;top:calc(var(--topbar-h)+20px)}
+.right-col{display:flex;flex-direction:column;gap:16px;position:fixed;top:calc(var(--topbar-h)+20px);right:28px;width:280px;transition:transform .3s var(--ease)}
+.right-col.mobile-hidden{transform:translateX(100%)}
 .widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;animation:slideUp .4s var(--ease) .08s both}
 .widget-head{padding:14px 18px;border-bottom:1px solid var(--border);font-size:.875rem;font-weight:700;display:flex;align-items:center;gap:8px}
 .widget-head i{color:var(--cyan)}
@@ -634,6 +720,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 /* Responsive */
 @media(max-width:960px){.page{grid-template-columns:1fr;justify-items:center}.right-col{width:100%;max-width:580px;position:static}}
 @media(max-width:768px){
+  #toggleFilterBtn{display:grid}
+  .right-col{position:fixed;top:var(--topbar-h);right:0;bottom:0;width:280px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;padding:20px;overflow-y:auto;transform:translateX(100%)}
+  .right-col.mobile-open{transform:translateX(0)}
+}
+@media(max-width:768px){
   .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
   .overlay.open{display:block}.main{margin-left:0}.hamburger{display:grid}
   .page{padding:16px 14px}.topbar{padding:0 14px}
@@ -646,7 +737,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 <!-- ════════════ SIDEBAR ════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div class="logo-mark">🎓</div>
     <div class="logo-text"><?php echo SITE_NAME; ?><span>Student Portal</span></div>
   </div>
   <div class="sidebar-nav">
@@ -683,7 +773,22 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
       <div class="topbar-sub">Share problems, ask questions, help each other</div>
     </div>
     <div class="topbar-right">
-      <a href="notifications.php" class="icon-btn"><i class="fas fa-bell"></i></a>
+      <button class="icon-btn" id="toggleFilterBtn" title="Toggle Filters"><i class="fas fa-filter"></i></button>
+      <div style="position:relative">
+        <button class="icon-btn" id="notifBtn" title="Notifications"><i class="fas fa-bell"></i><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+        <div class="notif-dropdown" id="notifDropdown">
+          <div class="notif-header">
+            <div><span class="notif-header-title">Notifications</span><span class="notif-header-count" id="notifCount">(0)</span></div>
+            <button class="notif-mark-all" id="markAllNotif" style="display:none" onclick="markAllNotificationsRead()">Mark all read</button>
+          </div>
+          <div class="notif-body" id="notifBody">
+            <div class="notif-empty"><i class="fas fa-bell-slash"></i><div>No notifications</div></div>
+          </div>
+          <div class="notif-footer">
+            <a href="notifications.php" class="notif-view-all">View all notifications</a>
+          </div>
+        </div>
+      </div>
       <a href="profile.php" class="user-pill">
         <div class="pill-av"><?php echo strtoupper(substr($user['full_name'],0,1)); ?></div>
         <span class="pill-name"><?php echo htmlspecialchars($user['full_name']); ?></span>
@@ -780,17 +885,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
           <div class="rule-item"><span style="color:var(--emerald);flex-shrink:0">✓</span> Describe what you've already tried</div>
           <div class="rule-item"><span style="color:var(--emerald);flex-shrink:0">✓</span> Be specific — more detail = better answers</div>
           <div class="rule-item"><span style="color:var(--emerald);flex-shrink:0">✓</span> Reply to thank those who help you</div>
-        </div>
-      </div>
-
-      <!-- Rules -->
-      <div class="widget">
-        <div class="widget-head"><i class="fas fa-shield-halved"></i> Community Rules</div>
-        <div class="widget-body">
-          <div class="rule-item"><span style="color:var(--cyan);flex-shrink:0">•</span> Be respectful and kind to everyone</div>
-          <div class="rule-item"><span style="color:var(--cyan);flex-shrink:0">•</span> Only upload your own screenshots</div>
-          <div class="rule-item"><span style="color:var(--cyan);flex-shrink:0">•</span> No spam or irrelevant content</div>
-          <div class="rule-item"><span style="color:var(--cyan);flex-shrink:0">•</span> Help others — what goes around comes around</div>
         </div>
       </div>
 
@@ -1109,15 +1203,153 @@ document.getElementById('menuBtn')?.addEventListener('click', () => {
 document.getElementById('overlay').addEventListener('click', () => {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
+  rightCol.classList.remove('mobile-open');
+});
+
+// ── Mobile filter toggle ───────────────────────────────────
+const toggleFilterBtn = document.getElementById('toggleFilterBtn');
+const rightCol = document.querySelector('.right-col');
+
+toggleFilterBtn?.addEventListener('click', () => {
+  rightCol.classList.toggle('mobile-open');
+  document.getElementById('overlay').classList.toggle('open');
+  toggleFilterBtn.classList.toggle('active');
+});
+
+// ── Notification dropdown ──────────────────────────────────
+const notifBtn = document.getElementById('notifBtn');
+const notifDropdown = document.getElementById('notifDropdown');
+let notifOpen = false;
+
+notifBtn?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  notifOpen = !notifOpen;
+  notifDropdown.classList.toggle('open', notifOpen);
+  if (notifOpen) loadNotifications();
+});
+
+document.addEventListener('click', (e) => {
+  if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
+    notifOpen = false;
+    notifDropdown.classList.remove('open');
+  }
+});
+
+async function loadNotifications() {
+  try {
+    const r = await fetch('get_notifications.php');
+    const data = await r.json();
+    
+    const badge = document.getElementById('notifBadge');
+    const count = document.getElementById('notifCount');
+    const body = document.getElementById('notifBody');
+    const markAll = document.getElementById('markAllNotif');
+    
+    if (data.unread > 0) {
+      badge.textContent = data.unread > 9 ? '9+' : data.unread;
+      badge.style.display = 'grid';
+      markAll.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+      markAll.style.display = 'none';
+    }
+    
+    count.textContent = `(${data.total})`;
+    
+    if (data.notifications.length === 0) {
+      body.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i><div>No notifications</div></div>';
+    } else {
+      body.innerHTML = data.notifications.map(n => `
+        <div class="notif-item-small ${n.is_read ? '' : 'unread'}" onclick="goToNotification(${n.id}, '${n.link}')">
+          <div class="notif-av-small" style="background:${n.sender_color || '#3b82f6'}">${n.sender_initial || '🔔'}</div>
+          <div class="notif-content-small">
+            <div class="notif-text-small">${n.message_html}</div>
+            <div class="notif-time-small">${n.time_ago}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch(e) {
+    console.error('Failed to load notifications:', e);
+  }
+}
+
+async function goToNotification(id, link) {
+  try {
+    const fd = new FormData();
+    fd.append('action', 'mark_read');
+    fd.append('notification_id', id);
+    await fetch('notifications.php', { method: 'POST', body: fd });
+    window.location.href = link;
+  } catch(e) {
+    console.error(e);
+    window.location.href = link;
+  }
+}
+
+async function markNotifRead(id) {
+  try {
+    const fd = new FormData();
+    fd.append('action', 'mark_read');
+    fd.append('notification_id', id);
+    await fetch('notifications.php', { method: 'POST', body: fd });
+    loadNotifications();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function markAllNotificationsRead() {
+  try {
+    const fd = new FormData();
+    fd.append('action', 'mark_all_read');
+    await fetch('notifications.php', { method: 'POST', body: fd });
+    loadNotifications();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// Load notifications on page load
+loadNotifications();
+
+// Scroll to post/comment if URL has parameters
+window.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const postId = urlParams.get('post');
+  const commentId = urlParams.get('comment');
+  
+  if (postId) {
+    const postEl = document.getElementById('post-' + postId);
+    if (postEl) {
+      // Open comments section
+      const commentsSection = document.getElementById('comments-' + postId);
+      if (commentsSection) commentsSection.style.display = 'block';
+      
+      // Scroll to post
+      setTimeout(() => {
+        postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        postEl.style.border = '2px solid var(--cyan)';
+        setTimeout(() => postEl.style.border = '', 2000);
+      }, 300);
+      
+      // If comment specified, scroll to it
+      if (commentId) {
+        setTimeout(() => {
+          const commentEl = document.getElementById('comment-' + commentId);
+          if (commentEl) {
+            commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            commentEl.style.background = 'var(--cyan-dim)';
+            setTimeout(() => commentEl.style.background = '', 2000);
+          }
+        }, 800);
+      }
+    }
+  }
 });
 
 // ── Bind events on dynamic content ────────────────────────
 function bindNewElements() { /* events are delegated — nothing extra needed */ }
-
-// Hide all comment sections initially except posts with comments
-document.querySelectorAll('.post-comments').forEach(sec => {
-  if (!sec.querySelector('.comment-item')) sec.style.display = 'none';
-});
 </script>
 </body>
 </html>

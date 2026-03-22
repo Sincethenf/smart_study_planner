@@ -267,7 +267,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
       <div class="topbar-sub">Your saved content and lessons</div>
     </div>
     <div class="topbar-right">
-      <a href="notifications.php" class="icon-btn"><i class="fas fa-bell"></i></a>
+      <?php include '../includes/notification_dropdown.php'; ?>
       <a href="profile.php" class="user-pill">
         <div class="pill-avatar">
           <?php if (!empty($user['profile_picture'])): ?>

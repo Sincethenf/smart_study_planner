@@ -1,6 +1,7 @@
 <?php
 // student/lessons.php
 require_once '../config/database.php';
+require_once '../includes/notifications.php';
 requireLogin();
 
 $user_id = $_SESSION['user_id'];
@@ -69,6 +70,9 @@ $totalLessons   = $lessons->num_rows;
 $completedCount = count(array_filter($progress_map, fn($r) => $r['status'] === 'completed'));
 $inProgCount    = count(array_filter($progress_map, fn($r) => $r['status'] === 'in_progress'));
 $lessons->data_seek(0); // reset pointer after num_rows
+
+// Get unread notification count
+$unread_notifications = getUnreadNotificationCount($conn, $user_id);
 
 // Difficulty icons / colors
 $diffMeta = [
@@ -179,8 +183,9 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .topbar-title{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
 .topbar-sub{font-size:.72rem;color:var(--text3)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text2);cursor:pointer;transition:all .18s var(--ease);text-decoration:none;font-size:.88rem}
+.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text2);cursor:pointer;transition:all .18s var(--ease);text-decoration:none;font-size:.88rem;position:relative}
 .icon-btn:hover{border-color:var(--border-hi);color:var(--text)}
+.notif-pip{position:absolute;top:7px;right:7px;width:16px;height:16px;background:var(--rose);border-radius:50%;border:2px solid var(--bg2);color:#fff;font-size:.65rem;font-weight:700;display:grid;place-items:center;font-family:'JetBrains Mono',monospace}
 .user-pill{display:flex;align-items:center;gap:9px;padding:5px 14px 5px 6px;border-radius:30px;background:var(--surface);border:1px solid var(--border);cursor:pointer;text-decoration:none;transition:border-color .18s var(--ease)}
 .user-pill:hover{border-color:var(--border-hi)}
 .pill-avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0;background:linear-gradient(135deg,var(--blue),var(--violet));overflow:hidden}
@@ -391,7 +396,7 @@ form.lbtn-form .lbtn{width:100%}
       <div class="topbar-sub">Browse and track your learning progress</div>
     </div>
     <div class="topbar-right">
-      <a href="notifications.php" class="icon-btn"><i class="fas fa-bell"></i></a>
+      <?php include '../includes/notification_dropdown.php'; ?>
       <a href="profile.php" class="user-pill">
         <div class="pill-avatar">
           <?php if (!empty($user['profile_picture'])): ?>
