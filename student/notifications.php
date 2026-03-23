@@ -62,7 +62,7 @@ if ($has_sender_col) {
     $notif_stmt = $conn->prepare("
         SELECT n.id, n.title, n.message, n.type, n.is_read, n.created_at,
                n.sender_id, n.related_id, n.related_type,
-               u.full_name  AS sender_name,
+               u.full_name  AS sender_name, u.profile_picture,
                COALESCE(u.avatar_color,'#4f46e5') AS sender_color
         FROM notifications n
         LEFT JOIN users u ON n.sender_id = u.id
@@ -432,11 +432,17 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
         <span class="unread-dot"></span>
         <?php endif; ?>
 
-        <!-- Icon: show sender avatar initial if sender exists, else type icon -->
+        <!-- Icon: show sender avatar/picture if sender exists, else type icon -->
         <?php if (!empty($notif['sender_name'])): ?>
-        <div class="notif-icon" style="background:<?php echo htmlspecialchars(!empty($notif['sender_color']) ? $notif['sender_color'] : '#4f46e5'); ?>;color:#fff;font-weight:700;font-size:.9rem">
-          <?php echo strtoupper(substr($notif['sender_name'], 0, 1)); ?>
-        </div>
+          <?php if (!empty($notif['profile_picture'])): ?>
+          <div class="notif-icon" style="overflow:hidden;padding:0">
+            <img src="../assets/uploads/profiles/<?php echo htmlspecialchars($notif['profile_picture']); ?>" alt="<?php echo htmlspecialchars($notif['sender_name']); ?>" style="width:100%;height:100%;object-fit:cover">
+          </div>
+          <?php else: ?>
+          <div class="notif-icon" style="background:<?php echo htmlspecialchars(!empty($notif['sender_color']) ? $notif['sender_color'] : '#4f46e5'); ?>;color:#fff;font-weight:700;font-size:.9rem">
+            <?php echo strtoupper(substr($notif['sender_name'], 0, 1)); ?>
+          </div>
+          <?php endif; ?>
         <?php else: ?>
         <div class="notif-icon" style="background:<?php echo $bg; ?>;color:<?php echo $color; ?>">
           <i class="<?php echo $icon; ?>"></i>

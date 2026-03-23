@@ -1343,15 +1343,22 @@ async function loadNotifications() {
     if (data.notifications.length === 0) {
       body.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i><div>No notifications</div></div>';
     } else {
-      body.innerHTML = data.notifications.map(n => `
+      body.innerHTML = data.notifications.map(n => {
+        let avatarHtml = '';
+        if (n.sender_picture) {
+          avatarHtml = `<div class="notif-av-small"><img src="../assets/uploads/profiles/${n.sender_picture}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>`;
+        } else {
+          avatarHtml = `<div class="notif-av-small" style="background:${n.sender_color || '#3b82f6'}">${n.sender_initial || '🔔'}</div>`;
+        }
+        return `
         <div class="notif-item-small ${n.is_read ? '' : 'unread'}" onclick="goToNotification(${n.id}, '${n.link}')">
-          <div class="notif-av-small" style="background:${n.sender_color || '#3b82f6'}">${n.sender_initial || '🔔'}</div>
+          ${avatarHtml}
           <div class="notif-content-small">
             <div class="notif-text-small">${n.message_html}</div>
             <div class="notif-time-small">${n.time_ago}</div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
   } catch(e) {
     console.error('Failed to load notifications:', e);
