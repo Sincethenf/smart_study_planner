@@ -634,6 +634,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   border-radius:var(--radius);overflow:hidden;
   animation:slideUp .4s var(--ease) both;
   transition:border-color .2s var(--ease);
+  margin-bottom: 10px;
 }
 .feed-post:hover{border-color:var(--border-hi)}
 
