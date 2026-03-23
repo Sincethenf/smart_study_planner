@@ -23,7 +23,7 @@ if (!function_exists('timeAgoShort')) {
 $stmt = $conn->prepare("
     SELECT n.id, n.message, n.type, n.is_read, n.created_at,
            n.sender_id, n.related_id, n.related_type,
-           u.full_name AS sender_name,
+           u.full_name AS sender_name, u.profile_picture,
            COALESCE(u.avatar_color,'#3b82f6') AS sender_color
     FROM notifications n
     LEFT JOIN users u ON n.sender_id = u.id
@@ -73,6 +73,7 @@ while ($row = $result->fetch_assoc()) {
         'time_ago' => timeAgoShort($row['created_at']),
         'sender_initial' => !empty($row['sender_name']) ? strtoupper(substr($row['sender_name'], 0, 1)) : null,
         'sender_color' => $row['sender_color'],
+        'sender_picture' => $row['profile_picture'],
         'link' => $link
     ];
 }
