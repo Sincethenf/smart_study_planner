@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyFlow — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:   #0a0a0a;
+  --dark:    #111111;
+  --card:    #181818;
+  --input:   #1f1f1f;
+  --border:  rgba(255,255,255,.08);
+  --border2: rgba(255,255,255,.14);
+  --text:    #f0f0f0;
+  --muted:   #888;
+  --purple1: #6b21d4;
+  --purple2: #a855f7;
+  --white:   #ffffff;
+  --ease:    cubic-bezier(.4,0,.2,1);
+}
+
+html, body {
+  height: 100%;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--black);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ── LAYOUT ── */
+.wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+}
+
+/* ═══════════════════════════════════
+   LEFT PANEL
+═══════════════════════════════════ */
+.left {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 48px;
+}
+
+/* Purple gradient background matching reference */
+.left-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 0%, #7c3aed 0%, #4c1d95 40%, #1a0533 70%, #0a0a0a 100%);
+  z-index: 0;
+}
+
+/* Grain overlay for texture */
+.left-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: .6;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Brand */
+.brand {
+  position: absolute;
+  top: 44px;
+  left: 48px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeUp .6s var(--ease) .1s both;
+}
+.brand-dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--white);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.brand-dot::after {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--black);
+}
+.brand-name {
+  font-family: 'Syne', sans-serif;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: .02em;
+}
+
+/* Left content */
+.left-content {
+  position: relative;
+  z-index: 2;
+}
+
+.left-headline {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--white);
+  margin-bottom: 10px;
+  animation: fadeUp .6s var(--ease) .2s both;
+}
+
+.left-sub {
+  font-size: .95rem;
+  color: rgba(255,255,255,.6);
+  line-height: 1.6;
+  margin-bottom: 36px;
+  animation: fadeUp .6s var(--ease) .25s both;
+}
+
+/* Steps */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: .9rem;
+  color: rgba(255,255,255,.55);
+  transition: all .25s var(--ease);
+  animation: fadeUp .6s var(--ease) both;
+}
+.step:nth-child(1) { animation-delay: .3s; }
+.step:nth-child(2) { animation-delay: .35s; }
+.step:nth-child(3) { animation-delay: .4s; }
+
+.step.active {
+  background: rgba(255,255,255,.92);
+  color: var(--black);
+  border-color: transparent;
+  font-weight: 600;
+}
+.step:not(.active) {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.08);
+}
+.step:not(.active):hover {
+  background: rgba(255,255,255,.10);
+}
+
+.step-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: 'Syne', sans-serif;
+  font-size: .78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.step.active .step-num {
+  background: var(--black);
+  color: var(--white);
+}
+.step:not(.active) .step-num {
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.5);
+}
+
+/* ═══════════════════════════════════
+   RIGHT PANEL
+═══════════════════════════════════ */
+.right {
+  background: var(--dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  position: relative;
+  overflow-y: auto;
+}
+
+.form-box {
+  width: 100%;
+  max-width: 380px;
+  animation: fadeUp .6s var(--ease) .15s both;
+}
+
+/* Tab switcher */
+.tabs {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 32px;
+}
+.tab {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+  transition: all .2s var(--ease);
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.tab.active {
+  color: var(--white);
+  border-bottom-color: var(--white);
+}
+.tab:hover:not(.active) {
+  color: rgba(255,255,255,.6);
+}
+
+/* Sub text */
+.form-sub {
+  font-size: .85rem;
+  color: var(--muted);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* Social buttons */
+.social-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .87rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s var(--ease);
+}
+.social-btn:hover {
+  background: #222;
+  border-color: rgba(255,255,255,.22);
+}
+.social-btn svg { flex-shrink: 0; }
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  font-size: .8rem;
+  color: var(--muted);
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Name row */
+.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Form group */
+.form-group {
+  margin-bottom: 16px;
+}
+.form-label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.7);
+  margin-bottom: 7px;
+  letter-spacing: .01em;
+}
+.form-input {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--input);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .88rem;
+  outline: none;
+  transition: border-color .18s var(--ease), box-shadow .18s var(--ease);
+}
+.form-input::placeholder {
+  color: #444;
+}
+.form-input:focus {
+  border-color: rgba(168,85,247,.5);
+  box-shadow: 0 0 0 3px rgba(168,85,247,.12);
+}
+
+/* Password wrapper */
+.pw-wrap {
+  position: relative;
+}
+.pw-wrap .form-input {
+  padding-right: 42px;
+}
+.pw-toggle {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+  transition: color .15s;
+}
+.pw-toggle:hover { color: var(--text); }
+
+/* Hint */
+.form-hint {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* Submit */
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: var(--white);
+  color: var(--black);
+  font-family: 'Syne', sans-serif;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  margin-bottom: 20px;
+  transition: all .2s var(--ease);
+  letter-spacing: .01em;
+}
+.btn-submit:hover {
+  background: #e8e8e8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+/* Footer link */
+.form-footer {
+  text-align: center;
+  font-size: .84rem;
+  color: var(--muted);
+}
+.form-footer a {
+  color: var(--white);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.form-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ── Tabs content ── */
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  html, body { overflow: auto; }
+  .wrapper { grid-template-columns: 1fr; height: auto; }
+  .left {
+    min-height: 340px;
+    padding: 32px 24px 40px;
+  }
+  .brand { top: 28px; left: 24px; }
+  .left-headline { font-size: 1.9rem; }
+  .right { padding: 36px 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- ═════════════ LEFT PANEL ═════════════ -->
+  <div class="left">
+    <div class="left-bg"></div>
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span class="brand-name">StudyFlow</span>
+    </div>
+
+    <!-- Content -->
+    <div class="left-content">
+      <h1 class="left-headline">Get Started<br>with Us</h1>
+      <p class="left-sub">Complete these easy steps to register<br>your account.</p>
+
+      <div class="steps">
+        <div class="step active">
+          <div class="step-num">1</div>
+          Sign up your account
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          Set up your workspace
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          Set up your profile
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════ RIGHT PANEL ═════════════ -->
+  <div class="right">
+    <div class="form-box">
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab" id="loginTab" onclick="switchTab('login')">Sign In</button>
+        <button class="tab active" id="registerTab" onclick="switchTab('register')">Sign Up</button>
+      </div>
+
+      <!-- ── REGISTER PANE ── -->
+      <div class="tab-pane active" id="registerPane">
+        <p class="form-sub">Enter your personal data to create your account.</p>
+
+        <!-- Social -->
+        <div class="social-row">
+          <button class="social-btn">
+            <!-- Google icon -->
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+            Google
+          </button>
+          <button class="social-btn">
+            <!-- Github icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            Github
+          </button>
+        </div>
+
+        <div class="divider">Or</div>
+
+        <form onsubmit="return false">
+          <!-- Name row -->
+          <div class="name-row">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input class="form-input" type="text" placeholder="eg. John">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input class="form-input" type="text" placeholder="eg. Francisco">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" placeholder="eg. johnfrans@gmail.com">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="pw-wrap">
+              <input class="form-input" type="password" id="regPw" placeholder="Enter your password">
+              <button type="button" class="pw-toggle" onclick="togglePw('regPw',this)">
+                <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <p class="form-hint">Must be at least 8 characters.</p>
+          </div>
+
+          <button class="btn-submit" type="submit">Sign Up</button>
+        </form>
+
+        <p class="form-footer">Already have an account? <a onclick="switchTab('login')">Log in</a></p>
+      </div>
+
+      <!-- ── LOGIN PANE ── -->
+      <div class="tab-pane" id="loginPane">
+        <p class="form-sub">Welcome back! Enter your credentials to access your account.</p>
+
+        <!-- Social -->
+        <div class="social-row">
+          <button class="social-btn">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
+            Google
+          </button>
+          <button class="social-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            Github
+          </button>
+        </div>
+
+        <div class="divider">Or</div>
+
+        <form onsubmit="return false">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" type="email" placeholder="eg. johnfrans@gmail.com">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="pw-wrap">
+              <input class="form-input" type="password" id="loginPw" placeholder="Enter your password">
+              <button type="button" class="pw-toggle" onclick="togglePw('loginPw',this)">
+                <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div style="text-align:right;margin-bottom:20px">
+            <a href="#" style="font-size:.82rem;color:var(--muted);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">Forgot password?</a>
+          </div>
+
+          <button class="btn-submit" type="submit">Log In</button>
+        </form>
+
+        <p class="form-footer">Don't have an account? <a onclick="switchTab('register')">Sign up</a></p>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+
+  document.getElementById('loginTab').classList.toggle('active', isLogin);
+  document.getElementById('registerTab').classList.toggle('active', !isLogin);
+
+  document.getElementById('loginPane').classList.toggle('active', isLogin);
+  document.getElementById('registerPane').classList.toggle('active', !isLogin);
+
+  // Update left panel steps
+  const steps = document.querySelectorAll('.step');
+  if (isLogin) {
+    steps.forEach((s, i) => {
+      s.classList.toggle('active', i === 0);
+    });
+  } else {
+    steps.forEach((s, i) => {
+      s.classList.toggle('active', i === 0);
+    });
+  }
+
+  // Animate pane in
+  const activePane = isLogin ? document.getElementById('loginPane') : document.getElementById('registerPane');
+  activePane.style.animation = 'none';
+  requestAnimationFrame(() => {
+    activePane.style.animation = 'fadeUp .4s cubic-bezier(.4,0,.2,1) both';
+  });
+}
+
+function togglePw(id, btn) {
+  const input = document.getElementById(id);
+  const isText = input.type === 'text';
+  input.type = isText ? 'password' : 'text';
+  btn.style.color = isText ? '' : 'var(--text)';
+}
+
+// Step interaction
+document.querySelectorAll('.step').forEach((step, i) => {
+  step.addEventListener('click', () => {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    step.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
