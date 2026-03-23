@@ -19,10 +19,26 @@ function getUserAnalytics($conn, $user_id, $days) {
     for ($i = $days - 1; $i >= 0; $i--) {
         $date     = date('Y-m-d', strtotime("-$i days"));
         $labels[] = date('D, M d', strtotime($date));
+        
+        // Get regular activity
         $stmt = $conn->prepare("SELECT COALESCE(SUM(count),0) as total FROM user_activity WHERE user_id=? AND activity_date=?");
         $stmt->bind_param("is", $user_id, $date);
         $stmt->execute();
-        $data[] = (int)$stmt->get_result()->fetch_assoc()['total'];
+        $regular = (int)$stmt->get_result()->fetch_assoc()['total'];
+        
+        // Get forum activity for this date
+        $forum = $conn->prepare("
+            SELECT 
+                (SELECT COUNT(*) FROM feed_posts WHERE user_id=? AND DATE(created_at)=?) +
+                (SELECT COUNT(*) FROM feed_comments WHERE user_id=? AND DATE(created_at)=?) +
+                (SELECT COUNT(*) FROM feed_replies WHERE user_id=? AND DATE(created_at)=?) +
+                (SELECT COUNT(*) FROM feed_likes WHERE user_id=? AND DATE(created_at)=?) as forum_total
+        ");
+        $forum->bind_param("i" . "s" . "i" . "s" . "i" . "s" . "i" . "s", $user_id, $date, $user_id, $date, $user_id, $date, $user_id, $date);
+        $forum->execute();
+        $forum_total = (int)$forum->get_result()->fetch_assoc()['forum_total'];
+        
+        $data[] = $regular + $forum_total;
     }
     return ['labels' => $labels, 'data' => $data];
 }
@@ -39,11 +55,37 @@ $breakdown_query->bind_param("i", $user_id);
 $breakdown_query->execute();
 $breakdown = $breakdown_query->get_result();
 $activity_types = []; $activity_counts = [];
-$activity_colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b'];
+$activity_colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#06b6d4','#f43f5e'];
 while ($row = $breakdown->fetch_assoc()) {
     $activity_types[]  = ucfirst($row['activity_type']);
     $activity_counts[] = $row['total'];
 }
+
+// Add forum activities to breakdown
+$forum_breakdown = $conn->prepare("
+    SELECT 
+        (SELECT COUNT(*) FROM feed_posts WHERE user_id=? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as posts,
+        (SELECT COUNT(*) FROM feed_comments WHERE user_id=? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as comments,
+        (SELECT COUNT(*) FROM feed_replies WHERE user_id=? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as replies,
+        (SELECT COUNT(*) FROM feed_likes WHERE user_id=? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as likes
+");
+$forum_breakdown->bind_param("iiii", $user_id, $user_id, $user_id, $user_id);
+$forum_breakdown->execute();
+$forum_data = $forum_breakdown->get_result()->fetch_assoc();
+
+if ($forum_data['posts'] > 0) {
+    $activity_types[] = 'Forum Posts';
+    $activity_counts[] = $forum_data['posts'];
+}
+if (($forum_data['comments'] + $forum_data['replies']) > 0) {
+    $activity_types[] = 'Forum Replies';
+    $activity_counts[] = $forum_data['comments'] + $forum_data['replies'];
+}
+if ($forum_data['likes'] > 0) {
+    $activity_types[] = 'Forum Likes';
+    $activity_counts[] = $forum_data['likes'];
+}
+
 if (empty($activity_types)) {
     $activity_types  = ['Login','Lesson','Generate','Favorite'];
     $activity_counts = [0,0,0,0];
@@ -66,6 +108,25 @@ $gt = $conn->prepare("SELECT COUNT(*) as count FROM user_activity WHERE user_id=
 $gt->bind_param("i", $user_id); $gt->execute();
 $generated_count = $gt->get_result()->fetch_assoc()['count'];
 
+// Forum activity counts
+$forum_posts = $conn->prepare("SELECT COUNT(*) as count FROM feed_posts WHERE user_id=?");
+$forum_posts->bind_param("i", $user_id); $forum_posts->execute();
+$posts_count = $forum_posts->get_result()->fetch_assoc()['count'];
+
+$forum_comments = $conn->prepare("SELECT COUNT(*) as count FROM feed_comments WHERE user_id=?");
+$forum_comments->bind_param("i", $user_id); $forum_comments->execute();
+$comments_count = $forum_comments->get_result()->fetch_assoc()['count'];
+
+$forum_replies = $conn->prepare("SELECT COUNT(*) as count FROM feed_replies WHERE user_id=?");
+$forum_replies->bind_param("i", $user_id); $forum_replies->execute();
+$replies_count = $forum_replies->get_result()->fetch_assoc()['count'];
+
+$forum_likes = $conn->prepare("SELECT COUNT(*) as count FROM feed_likes WHERE user_id=?");
+$forum_likes->bind_param("i", $user_id); $forum_likes->execute();
+$likes_count = $forum_likes->get_result()->fetch_assoc()['count'];
+
+$total_forum_activity = $posts_count + $comments_count + $replies_count + $likes_count;
+
 $students = $conn->query("
     SELECT u.id, u.full_name, u.student_id, u.profile_picture,
            r.total_points,
@@ -78,6 +139,16 @@ $ra = $conn->prepare("SELECT activity_type, activity_date, count FROM user_activ
 $ra->bind_param("i", $user_id); $ra->execute();
 $recent = $ra->get_result();
 
+// Recent forum activity
+$forum_activity = $conn->query("
+    SELECT 'post' as type, created_at, caption as content, id FROM feed_posts WHERE user_id=$user_id
+    UNION ALL
+    SELECT 'comment' as type, created_at, content, id FROM feed_comments WHERE user_id=$user_id
+    UNION ALL
+    SELECT 'reply' as type, created_at, content, id FROM feed_replies WHERE user_id=$user_id
+    ORDER BY created_at DESC LIMIT 5
+");
+
 $da = $conn->prepare("
     SELECT activity_date,
            SUM(CASE WHEN activity_type='login'    THEN count ELSE 0 END) as logins,
@@ -89,6 +160,21 @@ $da = $conn->prepare("
     GROUP BY activity_date ORDER BY activity_date DESC");
 $da->bind_param("i", $user_id); $da->execute();
 $daily = $da->get_result();
+
+// Get forum activity per day for last 7 days
+$forum_daily = [];
+for ($i = 0; $i < 7; $i++) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $fq = $conn->prepare("
+        SELECT 
+            (SELECT COUNT(*) FROM feed_posts WHERE user_id=? AND DATE(created_at)=?) as posts,
+            (SELECT COUNT(*) FROM feed_comments WHERE user_id=? AND DATE(created_at)=?) as comments,
+            (SELECT COUNT(*) FROM feed_replies WHERE user_id=? AND DATE(created_at)=?) as replies
+    ");
+    $fq->bind_param("isisis", $user_id, $date, $user_id, $date, $user_id, $date);
+    $fq->execute();
+    $forum_daily[$date] = $fq->get_result()->fetch_assoc();
+}
 
 $current_page = basename($_SERVER['PHP_SELF']);
 
@@ -604,10 +690,12 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 @media(max-width:1280px){
   .stats-row{grid-template-columns:repeat(2,1fr)}
   .mini-row{grid-template-columns:repeat(2,1fr)}
+  .charts-row{grid-template-columns:1fr}
 }
 @media(max-width:1024px){
   .charts-row{grid-template-columns:1fr}
   .top-nav-links{display:none}
+  .page{padding:20px 18px}
 }
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%)}
@@ -615,14 +703,71 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
   .overlay.open{display:block}
   .main{margin-left:0}
   .hamburger{display:grid}
-  .page{padding:18px 14px}
+  .page{padding:18px 14px;gap:18px}
+  .streak-banner{order:-1}
+  .charts-row{order:0}
+  .stats-row{order:1}
   .topbar{padding:0 14px}
-  .stats-row{grid-template-columns:1fr 1fr}
-  thead th:nth-child(3),thead th:nth-child(4),
-  tbody td:nth-child(3),tbody td:nth-child(4){display:none}
+  .stats-row{grid-template-columns:1fr}
+  .stat-card{padding:16px 18px}
+  .stat-value{font-size:1.6rem}
+  .streak-banner{padding:14px 18px;flex-direction:column;text-align:center;gap:10px}
+  .streak-banner::before{display:none}
+  .streak-flame{font-size:1.8rem;margin:0}
+  .streak-body{gap:4px}
+  .streak-label{font-size:.65rem;margin-bottom:0}
+  .streak-count{font-size:1.3rem}
+  .streak-sub{font-size:.72rem;margin-top:2px}
+  .streak-right{margin-left:0;margin-top:0;text-align:center}
+  .streak-best{font-size:.68rem}
+  .chart-card{padding:18px 16px}
+  .card-head{flex-direction:column;gap:12px}
+  .time-range{width:100%;justify-content:center}
+  .mini-row{grid-template-columns:repeat(2,1fr);gap:8px}
+  .mini-cell{padding:10px 8px}
+  .mini-val{font-size:1rem}
+  .mini-label{font-size:.6rem}
+  thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5),thead th:nth-child(6),
+  tbody td:nth-child(3),tbody td:nth-child(4),tbody td:nth-child(5),tbody td:nth-child(6){display:none}
+  .table-top{flex-direction:column;align-items:flex-start;gap:10px}
+  .activity-card{padding:18px 16px}
+  .activity-item{padding:10px 12px;gap:12px}
+  .act-icon{width:32px;height:32px;font-size:.8rem}
+  .act-title{font-size:.8rem}
+  .act-meta{font-size:.68rem}
+  .leaderboard-card thead th:nth-child(3),
+  .leaderboard-card tbody td:nth-child(3),
+  .leaderboard-card thead th:nth-child(5),
+  .leaderboard-card tbody td:nth-child(5){display:none}
 }
 @media(max-width:480px){
   .stats-row{grid-template-columns:1fr}
+  .topbar-title{font-size:.95rem}
+  .topbar-sub{display:none}
+  .user-pill .pill-name{display:none}
+  .stat-label{font-size:.68rem}
+  .stat-desc{font-size:.65rem}
+  .streak-banner{padding:12px 16px;gap:8px}
+  .streak-flame{font-size:1.5rem}
+  .streak-label{font-size:.6rem}
+  .streak-count{font-size:1.1rem}
+  .streak-sub{font-size:.68rem;display:none}
+  .streak-best{font-size:.62rem}
+  .chart-canvas-wrap{height:200px}
+  .donut-wrap{height:160px}
+  .mini-row{grid-template-columns:1fr 1fr}
+  .card-title{font-size:.85rem}
+  .card-sub{font-size:.68rem}
+  thead th{padding:8px 12px;font-size:.6rem}
+  tbody td{padding:10px 12px;font-size:.78rem}
+  .date-strong{font-size:.72rem}
+  .act-pill{padding:2px 7px;font-size:.65rem}
+  .activity-item{flex-direction:column;align-items:flex-start}
+  .act-count{margin-left:auto}
+  .btn-link{font-size:.72rem;padding:6px 12px}
+  .leaderboard-card thead th:nth-child(4),
+  .leaderboard-card tbody td:nth-child(4){display:none}
+  .rank-badge{font-size:.65rem;padding:2px 7px}
 }
 </style>
 </head>
@@ -775,13 +920,13 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 
       <div class="stat-card c-amber">
         <div class="stat-top">
-          <div class="stat-icon"><i class="fas fa-star"></i></div>
-          <span class="trend-chip trend-live">● Live</span>
+          <div class="stat-icon"><i class="fas fa-comments"></i></div>
+          <span class="trend-chip trend-pos">↑ Forum</span>
         </div>
         <div>
-          <div class="stat-label">Total Points</div>
-          <div class="stat-value" data-count="<?= $user['points'] ?? 0 ?>">0</div>
-          <div class="stat-desc">Ranking score</div>
+          <div class="stat-label">Forum Interactions</div>
+          <div class="stat-value" data-count="<?= $total_forum_activity ?>">0</div>
+          <div class="stat-desc"><?= $posts_count ?> posts · <?= $comments_count + $replies_count ?> replies · <?= $likes_count ?> likes</div>
         </div>
       </div>
     </div>
@@ -860,7 +1005,7 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
       <div class="table-top">
         <div>
           <div class="card-title">Daily Activity — Last 7 Days</div>
-          <div class="card-sub">Breakdown by activity type per day</div>
+          <div class="card-sub">Breakdown by activity type per day (including forum)</div>
         </div>
       </div>
       <div style="overflow-x:auto">
@@ -872,23 +1017,30 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
               <th>Lessons</th>
               <th>Generate</th>
               <th>Favorites</th>
+              <th>Forum Posts</th>
+              <th>Forum Replies</th>
               <th>Total</th>
             </tr>
           </thead>
           <tbody>
             <?php if($daily->num_rows > 0): ?>
-              <?php while($day = $daily->fetch_assoc()): ?>
+              <?php while($day = $daily->fetch_assoc()): 
+                $forum = $forum_daily[$day['activity_date']] ?? ['posts'=>0,'comments'=>0,'replies'=>0];
+                $forum_total = $forum['posts'] + $forum['comments'] + $forum['replies'];
+              ?>
               <tr>
                 <td><span class="date-strong"><?= date('d M Y',strtotime($day['activity_date'])) ?></span></td>
                 <td><span class="act-pill ap-login"><?= $day['logins'] ?></span></td>
                 <td><span class="act-pill ap-lesson"><?= $day['lessons'] ?></span></td>
                 <td><span class="act-pill ap-generate"><?= $day['generates'] ?></span></td>
                 <td><span class="act-pill ap-favorite"><?= $day['favorites'] ?></span></td>
-                <td><span class="act-pill ap-total"><?= $day['total'] ?></span></td>
+                <td><span class="act-pill" style="background:var(--cyan-dim);color:var(--cyan)"><?= $forum['posts'] ?></span></td>
+                <td><span class="act-pill" style="background:var(--violet-dim);color:var(--violet)"><?= $forum['comments'] + $forum['replies'] ?></span></td>
+                <td><span class="act-pill ap-total"><?= $day['total'] + $forum_total ?></span></td>
               </tr>
               <?php endwhile; ?>
             <?php else: ?>
-              <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">
+              <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">
                 <i class="fas fa-circle-info"></i> No activity in the last 7 days.
               </td></tr>
             <?php endif; ?>
@@ -930,6 +1082,46 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
         <?php endwhile; else: ?>
         <div style="text-align:center;padding:32px;color:var(--text3);font-size:.875rem">
           <i class="fas fa-circle-info"></i> No recent activity. Start learning to see it here!
+        </div>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <!-- ── FORUM ACTIVITY ─────────────────────────── -->
+    <div class="activity-card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Recent Forum Activity</div>
+          <div class="card-sub">Your latest forum interactions</div>
+        </div>
+        <a href="forum.php" class="btn-link"><i class="fas fa-comments"></i> Go to Forum</a>
+      </div>
+      <div class="activity-list">
+        <?php
+        $forumIcons  = ['post'=>'fa-file-lines','comment'=>'fa-comment','reply'=>'fa-reply'];
+        $forumColors = ['post'=>'var(--cyan-dim)','comment'=>'var(--violet-dim)','reply'=>'var(--emerald-dim)'];
+        $forumText   = ['post'=>'var(--cyan)','comment'=>'var(--violet)','reply'=>'var(--emerald)'];
+        if($forum_activity->num_rows > 0):
+          while($fact = $forum_activity->fetch_assoc()):
+            $ft = $fact['type'];
+            $fbg  = $forumColors[$ft] ?? 'var(--surface2)';
+            $fclr = $forumText[$ft]   ?? 'var(--text2)';
+            $fico = $forumIcons[$ft]  ?? 'fa-circle';
+            $preview = htmlspecialchars(mb_substr($fact['content'] ?? 'No content', 0, 60));
+            if(strlen($fact['content'] ?? '') > 60) $preview .= '...';
+        ?>
+        <div class="activity-item">
+          <div class="act-icon" style="background:<?=$fbg?>;color:<?=$fclr?>">
+            <i class="fas <?=$fico?>"></i>
+          </div>
+          <div class="act-body">
+            <div class="act-title"><?= ucfirst($ft) ?> in Forum</div>
+            <div class="act-meta"><?= $preview ?> · <?= date('M d, Y g:i A',strtotime($fact['created_at'])) ?></div>
+          </div>
+        </div>
+        <?php endwhile; else: ?>
+        <div style="text-align:center;padding:32px;color:var(--text3);font-size:.875rem">
+          <i class="fas fa-comments"></i> No forum activity yet. Join the discussion!
         </div>
         <?php endif; ?>
       </div>
@@ -1093,8 +1285,8 @@ new Chart(document.getElementById('breakdownChart').getContext('2d'), {
     labels: <?= json_encode($activity_types) ?>,
     datasets: [{
       data: <?= json_encode($activity_counts) ?>,
-      backgroundColor: ['#3b82f6','#8b5cf6','#10b981','#f59e0b'],
-      hoverBackgroundColor: ['#60a5fa','#a78bfa','#34d399','#fbbf24'],
+      backgroundColor: ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#06b6d4','#f43f5e'],
+      hoverBackgroundColor: ['#60a5fa','#a78bfa','#34d399','#fbbf24','#22d3ee','#fb7185'],
       borderColor: '#161929',
       borderWidth: 3,
       hoverOffset: 6,

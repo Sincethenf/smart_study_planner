@@ -335,7 +335,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   </div>
   <div class="sidebar-footer">
     <div class="user-chip">
+      <?php if (!empty($user['profile_picture'])): ?>
+      <div class="user-chip-av"><img src="../assets/uploads/profiles/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="<?php echo htmlspecialchars($user['full_name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
+      <?php else: ?>
       <div class="user-chip-av"><?php echo strtoupper(substr($user['full_name'],0,1)); ?></div>
+      <?php endif; ?>
       <div>
         <div class="user-chip-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
         <div class="user-chip-role">Student</div>
@@ -357,7 +361,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
     </div>
     <div class="topbar-right">
       <a href="profile.php" class="user-pill">
+        <?php if (!empty($user['profile_picture'])): ?>
+        <div class="pill-av"><img src="../assets/uploads/profiles/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="<?php echo htmlspecialchars($user['full_name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
+        <?php else: ?>
         <div class="pill-av"><?php echo strtoupper(substr($user['full_name'],0,1)); ?></div>
+        <?php endif; ?>
         <span class="pill-name"><?php echo htmlspecialchars($user['full_name']); ?></span>
       </a>
     </div>

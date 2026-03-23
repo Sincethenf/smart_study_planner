@@ -150,12 +150,22 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
             $notif_stmt->execute();
         }
         
+        // Fetch the newly created comment with user data
+        $fetch_comment = $conn->prepare("
+            SELECT fc.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
+            FROM feed_comments fc
+            JOIN users u ON fc.user_id=u.id
+            WHERE fc.id=?
+        ");
+        $fetch_comment->bind_param("i", $cid);
+        $fetch_comment->execute();
+        $comment_data = $fetch_comment->get_result()->fetch_assoc();
+        $comment_data['replies'] = [];
+        
         // Return rendered HTML of new comment
         $new_cnt = (int)$conn->query("SELECT comment_count FROM feed_posts WHERE id=$pid")->fetch_assoc()['comment_count'];
         jsonOut(['ok'=>true,'comment_id'=>$cid,'comment_count'=>$new_cnt,
-            'html'=>renderComment(['id'=>$cid,'content'=>$content,'user_id'=>$user_id,
-                'full_name'=>$user['full_name'],'avatar_color'=>(!empty($user['avatar_color']) ? $user['avatar_color'] : '#3b82f6'),
-                'role'=>$user['role'],'created_at'=>date('Y-m-d H:i:s')], $user_id)]);
+            'html'=>renderComment($comment_data, $user_id)]);
     }
     jsonOut(['ok'=>false,'error'=>'Failed to post comment.']);
 }
@@ -184,10 +194,19 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
             $notif_stmt->execute();
         }
         
+        // Fetch the newly created reply with user data
+        $fetch_reply = $conn->prepare("
+            SELECT fr.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
+            FROM feed_replies fr
+            JOIN users u ON fr.user_id=u.id
+            WHERE fr.id=?
+        ");
+        $fetch_reply->bind_param("i", $rid);
+        $fetch_reply->execute();
+        $reply_data = $fetch_reply->get_result()->fetch_assoc();
+        
         jsonOut(['ok'=>true,'reply_id'=>$rid,
-            'html'=>renderReply(['id'=>$rid,'content'=>$content,'user_id'=>$user_id,
-                'full_name'=>$user['full_name'],'avatar_color'=>(!empty($user['avatar_color']) ? $user['avatar_color'] : '#3b82f6'),
-                'role'=>$user['role'],'created_at'=>date('Y-m-d H:i:s')], $user_id, $cid)]);
+            'html'=>renderReply($reply_data, $user_id, $cid)]);
     }
     jsonOut(['ok'=>false,'error'=>'Failed to post reply.']);
 }
@@ -246,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD']==='GET' && isset($_GET['load_more'])) {
 function fetchPosts(mysqli $conn, int $user_id, int $offset=0, int $limit=10): array {
     $res = $conn->query("
         SELECT fp.*,
-               u.full_name, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role,
+               u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role,
                (SELECT COUNT(*) FROM feed_likes fl WHERE fl.post_id=fp.id AND fl.user_id=$user_id) AS i_liked
         FROM feed_posts fp
         JOIN users u ON fp.user_id=u.id
@@ -260,7 +279,7 @@ function fetchPosts(mysqli $conn, int $user_id, int $offset=0, int $limit=10): a
 
 function fetchComments(mysqli $conn, int $post_id, int $user_id): array {
     $res = $conn->query("
-        SELECT fc.*, u.full_name, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
+        SELECT fc.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
         FROM feed_comments fc
         JOIN users u ON fc.user_id=u.id
         WHERE fc.post_id=$post_id
@@ -276,7 +295,7 @@ function fetchComments(mysqli $conn, int $post_id, int $user_id): array {
 
 function fetchReplies(mysqli $conn, int $comment_id, int $user_id): array {
     $res = $conn->query("
-        SELECT fr.*, u.full_name, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
+        SELECT fr.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
         FROM feed_replies fr
         JOIN users u ON fr.user_id=u.id
         WHERE fr.comment_id=$comment_id
@@ -297,9 +316,19 @@ function renderReply(array $r, int $me, int $comment_id): string {
     $rid  = (int)$r['id'];
     $mine = ((int)$r['user_id'] === $me);
     $del  = $mine ? "<button class='del-reply-btn action-micro' data-id='$rid' title='Delete'><i class='fas fa-trash'></i></button>" : '';
+    
+    // Avatar: use profile picture if available, else colored initial
+    $avatarHtml = '';
+    if (!empty($r['profile_picture'])) {
+        $picPath = '../assets/uploads/profiles/' . htmlspecialchars($r['profile_picture']);
+        $avatarHtml = "<div class='reply-av'><img src='$picPath' alt='$name' style='width:100%;height:100%;object-fit:cover;border-radius:50%'></div>";
+    } else {
+        $avatarHtml = "<div class='reply-av' style='background:$aclr'>$init</div>";
+    }
+    
     return "
     <div class='reply-item' id='reply-$rid'>
-      <div class='reply-av' style='background:$aclr'>$init</div>
+      $avatarHtml
       <div class='reply-right'>
         <div class='reply-bubble'>
           <div class='reply-meta'><span class='reply-name'>$name</span><span class='reply-role'>$role</span><span class='reply-time'>$time</span></div>
@@ -323,11 +352,34 @@ function renderComment(array $c, int $me): string {
     $cid      = (int)$c['id'];
     $mine     = ((int)$c['user_id'] === $me);
     $del      = $mine ? "<button class='del-comment-btn action-micro' data-id='$cid' data-post-id='{$c['post_id']}' title='Delete'><i class='fas fa-trash'></i></button>" : '';
+    
+    // Avatar: use profile picture if available, else colored initial
+    $avatarHtml = '';
+    if (!empty($c['profile_picture'])) {
+        $picPath = '../assets/uploads/profiles/' . htmlspecialchars($c['profile_picture']);
+        $avatarHtml = "<div class='comment-av'><img src='$picPath' alt='$name' style='width:100%;height:100%;object-fit:cover;border-radius:50%'></div>";
+    } else {
+        $avatarHtml = "<div class='comment-av' style='background:$aclr'>$init</div>";
+    }
+    
     $replies  = '';
     if (!empty($c['replies'])) foreach ($c['replies'] as $rep) $replies .= renderReply($rep, $me, $cid);
+    
+    // Current user avatar for reply input
+    $gUser = $GLOBALS['user'];
+    $meReplyAvHtml = '';
+    if (!empty($gUser['profile_picture'])) {
+        $mePicPath = '../assets/uploads/profiles/' . htmlspecialchars($gUser['profile_picture']);
+        $meReplyAvHtml = "<div class='reply-av'><img src='$mePicPath' alt='Me' style='width:100%;height:100%;object-fit:cover;border-radius:50%'></div>";
+    } else {
+        $meReplyAv = htmlspecialchars($gUser['avatar_color'] ? $gUser['avatar_color'] : '#3b82f6');
+        $meReplyInit = strtoupper(substr($gUser['full_name'],0,1));
+        $meReplyAvHtml = "<div class='reply-av' style='background:$meReplyAv'>$meReplyInit</div>";
+    }
+    
     return "
     <div class='comment-item' id='comment-$cid'>
-      <div class='comment-av' style='background:$aclr'>$init</div>
+      $avatarHtml
       <div class='comment-right'>
         <div class='comment-bubble'>
           <div class='comment-meta'><span class='comment-name'>$name</span><span class='comment-role'>$role</span><span class='comment-time'>$time</span></div>
@@ -340,7 +392,7 @@ function renderComment(array $c, int $me): string {
         <div class='replies-wrap' id='replies-$cid'>$replies</div>
         <div class='reply-form-wrap' id='reply-form-$cid' style='display:none'>
           <div class='inline-reply-form'>
-            <div class='reply-av' style='background:" . htmlspecialchars($GLOBALS['user']['avatar_color'] ? $GLOBALS['user']['avatar_color'] : '#3b82f6') . ">'>" . strtoupper(substr($GLOBALS['user']['full_name'],0,1)) . "</div>
+            $meReplyAvHtml
             <input class='reply-input' type='text' placeholder='Write a reply…' data-cid='$cid'>
             <button class='submit-reply-btn btn-send' data-cid='$cid'><i class='fas fa-paper-plane'></i></button>
           </div>
@@ -367,6 +419,16 @@ function renderPost(array $p, int $me): string {
     $mine    = ((int)$p['user_id'] === $me);
     $pinBadge= $p['is_pinned'] ? "<span class='pin-badge'><i class='fas fa-thumbtack'></i> Pinned</span>" : '';
     $delBtn  = $mine ? "<button class='del-post-btn post-menu-btn' data-id='$pid'><i class='fas fa-trash'></i> Delete</button>" : '';
+    
+    // Avatar: use profile picture if available, else colored initial
+    $avatarHtml = '';
+    if (!empty($p['profile_picture'])) {
+        $picPath = '../assets/uploads/profiles/' . htmlspecialchars($p['profile_picture']);
+        $avatarHtml = "<div class='post-av'><img src='$picPath' alt='$name' style='width:100%;height:100%;object-fit:cover;border-radius:50%'></div>";
+    } else {
+        $avatarHtml = "<div class='post-av' style='background:$aclr'>$init</div>";
+    }
+    
     $imgHtml = '';
     if (!empty($p['image_path'])) {
         $src     = FEED_UPLOAD_URL . htmlspecialchars($p['image_path']);
@@ -379,13 +441,22 @@ function renderPost(array $p, int $me): string {
     foreach ($crows as $c) $comments_html .= renderComment($c, $me);
 
     $gUser  = $GLOBALS['user'];
-    $meAv   = htmlspecialchars(!empty($gUser['avatar_color']) ? $gUser['avatar_color'] : '#3b82f6');
-    $meInit = strtoupper(substr($GLOBALS['user']['full_name'],0,1));
+    
+    // Current user avatar for comment input
+    $meAvHtml = '';
+    if (!empty($gUser['profile_picture'])) {
+        $mePicPath = '../assets/uploads/profiles/' . htmlspecialchars($gUser['profile_picture']);
+        $meAvHtml = "<div class='comment-av'><img src='$mePicPath' alt='Me' style='width:100%;height:100%;object-fit:cover;border-radius:50%'></div>";
+    } else {
+        $meAv = htmlspecialchars(!empty($gUser['avatar_color']) ? $gUser['avatar_color'] : '#3b82f6');
+        $meInit = strtoupper(substr($gUser['full_name'],0,1));
+        $meAvHtml = "<div class='comment-av' style='background:$meAv'>$meInit</div>";
+    }
 
     return "
 <div class='feed-post' id='post-$pid' data-pid='$pid'>
   <div class='post-header'>
-    <div class='post-av' style='background:$aclr'>$init</div>
+    $avatarHtml
     <div class='post-header-info'>
       <div class='post-author'>$name <span class='post-role'>$role</span> $pinBadge</div>
       <div class='post-time'><span class='cat-pill'>$cat</span> · $time</div>
@@ -407,7 +478,7 @@ function renderPost(array $p, int $me): string {
   <div class='post-comments' id='comments-$pid' style='display:none'>
     <div class='comments-list' id='comments-list-$pid'>$comments_html</div>
     <div class='comment-input-row'>
-      <div class='comment-av' style='background:$meAv'>$meInit</div>
+      $meAvHtml
       <input class='comment-input' type='text' placeholder='Write a comment…' data-pid='$pid'>
       <button class='submit-comment-btn btn-send' data-pid='$pid'><i class='fas fa-paper-plane'></i></button>
     </div>
@@ -754,7 +825,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   </div>
   <div class="sidebar-footer">
     <div class="user-chip">
+      <?php if (!empty($user['profile_picture'])): ?>
+      <div class="user-chip-av"><img src="../assets/uploads/profiles/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="<?php echo htmlspecialchars($user['full_name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
+      <?php else: ?>
       <div class="user-chip-av"><?php echo strtoupper(substr($user['full_name'],0,1)); ?></div>
+      <?php endif; ?>
       <div>
         <div class="user-chip-name"><?php echo htmlspecialchars($user['full_name']); ?></div>
         <div class="user-chip-role">Student</div>
@@ -790,7 +865,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
         </div>
       </div>
       <a href="profile.php" class="user-pill">
+        <?php if (!empty($user['profile_picture'])): ?>
+        <div class="pill-av"><img src="../assets/uploads/profiles/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="<?php echo htmlspecialchars($user['full_name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
+        <?php else: ?>
         <div class="pill-av"><?php echo strtoupper(substr($user['full_name'],0,1)); ?></div>
+        <?php endif; ?>
         <span class="pill-name"><?php echo htmlspecialchars($user['full_name']); ?></span>
       </a>
     </div>
@@ -804,9 +883,13 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
       <!-- Create post card -->
       <div class="create-card">
         <div class="create-top">
+          <?php if (!empty($user['profile_picture'])): ?>
+          <div class="create-av"><img src="../assets/uploads/profiles/<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="<?php echo htmlspecialchars($user['full_name']); ?>" style="width:100%;height:100%;object-fit:cover;border-radius:50%"></div>
+          <?php else: ?>
           <div class="create-av" style="background:<?php echo htmlspecialchars((!empty($user['avatar_color']) ? $user['avatar_color'] : '#3b82f6')) ?>">
             <?php echo strtoupper(substr($user['full_name'],0,1)); ?>
           </div>
+          <?php endif; ?>
           <button class="create-trigger" id="createTrigger">
             What problem are you facing today, <?php echo htmlspecialchars(explode(' ',$user['full_name'])[0]); ?>?
           </button>
