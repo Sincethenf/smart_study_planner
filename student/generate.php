@@ -19,90 +19,74 @@ $_SESSION['full_name']       = $user['full_name'];
 $_SESSION['profile_picture'] = $user['profile_picture'];
 
 // Handle generate form
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['generate'])) {
-    $prompt = sanitize($conn, $_POST['prompt']);
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['prompt'])) {
+    $prompt = trim($_POST['prompt']);
 
     if (!empty($prompt)) {
-        $templates = [
-            "📚 Lesson Summary for: $prompt\n\n" .
-            "=================================\n" .
-            "KEY LEARNING OBJECTIVES:\n" .
-            "=================================\n" .
-            "• Understand core concepts of $prompt\n" .
-            "• Identify practical applications\n" .
-            "• Analyze real-world examples\n" .
-            "• Practice with exercises\n\n" .
-            "=================================\n" .
-            "MAIN TOPICS COVERED:\n" .
-            "=================================\n" .
-            "1. Introduction to $prompt\n" .
-            "2. Fundamental principles\n" .
-            "3. Advanced concepts\n" .
-            "4. Case studies and examples\n" .
-            "5. Practice problems\n\n" .
-            "=================================\n" .
-            "QUICK REVIEW:\n" .
-            "=================================\n" .
-            "✓ Key terms defined\n" .
-            "✓ Important formulas\n" .
-            "✓ Common mistakes to avoid\n" .
-            "✓ Study tips and tricks",
-
-            "🎯 Study Guide: $prompt\n\n" .
-            "━━━━━━━━━━━━━━━━━━━━━━\n" .
-            "PART 1: FOUNDATIONS\n" .
-            "━━━━━━━━━━━━━━━━━━━━━━\n" .
-            "• Basic terminology\n" .
-            "• Core principles\n" .
-            "• Historical context\n\n" .
-            "━━━━━━━━━━━━━━━━━━━━━━\n" .
-            "PART 2: DEEP DIVE\n" .
-            "━━━━━━━━━━━━━━━━━━━━━━\n" .
-            "• Detailed explanation\n" .
-            "• Key theories\n" .
-            "• Expert insights\n\n" .
-            "━━━━━━━━━━━━━━━━━━━━━━\n" .
-            "PART 3: PRACTICE\n" .
-            "━━━━━━━━━━━━━━━━━━━━━━\n" .
-            "• 5 review questions\n" .
-            "• 3 discussion topics\n" .
-            "• 2 hands-on exercises",
-
-            "📝 Flashcards for: $prompt\n\n" .
-            "════════════════════════════\n" .
-            "CARD 1 ════════════════════\n" .
-            "Q: What is the main concept of $prompt?\n" .
-            "A: [Insert definition here]\n\n" .
-            "CARD 2 ════════════════════\n" .
-            "Q: Why is $prompt important?\n" .
-            "A: [Explain significance]\n\n" .
-            "CARD 3 ════════════════════\n" .
-            "Q: What are the key applications?\n" .
-            "A: [List applications]\n\n" .
-            "CARD 4 ════════════════════\n" .
-            "Q: Give an example of $prompt\n" .
-            "A: [Provide example]\n\n" .
-            "CARD 5 ════════════════════\n" .
-            "Q: Common misconceptions?\n" .
-            "A: [Address myths]"
+        // Call Gemini API
+        $apiKey = 'AIzaSyDKtuLyWJqaYnms-eY-fTWSNis319pTNfE';
+        $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' . $apiKey;
+        
+        $requestData = [
+            'contents' => [[
+                'parts' => [[
+                    'text' => "Create comprehensive study material about: $prompt. Include key concepts, explanations, examples, and practice questions. Format it clearly with sections and bullet points."
+                ]]
+            ]],
+            'generationConfig' => [
+                'temperature' => 0.7,
+                'maxOutputTokens' => 2048
+            ]
         ];
+        
+        $ch = curl_init($apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($requestData));
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+        
+        if ($curlError) {
+            $error = 'Connection error: ' . $curlError;
+        } elseif ($httpCode === 200 && $response) {
+            $data = json_decode($response, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $error = 'JSON decode error: ' . json_last_error_msg();
+            } elseif (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+                $generated_content = $data['candidates'][0]['content']['parts'][0]['text'];
+                
+                // Save to database
+                $stmt = $conn->prepare("INSERT INTO generated_content (user_id, title, content, type) VALUES (?, ?, ?, 'generated')");
+                $stmt->bind_param("iss", $user_id, $prompt, $generated_content);
+                $stmt->execute();
 
-        $generated_content = $templates[array_rand($templates)];
+                // Log activity
+                $today = date('Y-m-d');
+                $stmt  = $conn->prepare("INSERT INTO user_activity (user_id, activity_date, activity_type, count)
+                                          VALUES (?, ?, 'generate', 1)
+                                          ON DUPLICATE KEY UPDATE count = count + 1");
+                $stmt->bind_param("is", $user_id, $today);
+                $stmt->execute();
 
-        // Save to database
-        $stmt = $conn->prepare("INSERT INTO generated_content (user_id, title, content, type) VALUES (?, ?, ?, 'generated')");
-        $stmt->bind_param("iss", $user_id, $prompt, $generated_content);
-        $stmt->execute();
-
-        // Log activity
-        $today = date('Y-m-d');
-        $stmt  = $conn->prepare("INSERT INTO user_activity (user_id, activity_date, activity_type, count)
-                                  VALUES (?, ?, 'generate', 1)
-                                  ON DUPLICATE KEY UPDATE count = count + 1");
-        $stmt->bind_param("is", $user_id, $today);
-        $stmt->execute();
-
-        $success = "Content generated successfully!";
+                $success = "Content generated successfully!";
+            } else {
+                $error = 'API response invalid. ' . (isset($data['error']['message']) ? $data['error']['message'] : 'Unknown error');
+            }
+        } else {
+            // Decode error response
+            $errorData = json_decode($response, true);
+            $errorMsg = isset($errorData['error']['message']) ? $errorData['error']['message'] : 'Unknown error';
+            $error = 'API Error (HTTP ' . $httpCode . '): ' . $errorMsg . '. The API key may be invalid. Get a new key from https://aistudio.google.com/app/apikey';
+        }
     } else {
         $error = "Please enter a topic to generate content.";
     }
@@ -555,7 +539,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
           <div class="prompt-card-title"><i class="fas fa-wand-magic-sparkles"></i> Generate Learning Content</div>
           <div class="prompt-card-sub">Enter any topic and get instant study materials</div>
 
-          <form method="POST" action="" id="generateForm">
+          <form method="POST" id="generateForm">
             <div class="input-row">
               <input type="text"
                      name="prompt"
@@ -565,7 +549,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
                      value="<?php echo isset($_POST['prompt']) ? htmlspecialchars($_POST['prompt']) : ''; ?>"
                      autocomplete="off"
                      required>
-              <button type="submit" name="generate" class="gen-btn" id="genBtn">
+              <button type="submit" class="gen-btn" id="genBtn">
                 <i class="fas fa-bolt-lightning" id="genIcon"></i>
                 <span id="genLabel">Generate</span>
               </button>
@@ -608,10 +592,10 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
               <button class="btn-copy" id="copyBtn" onclick="copyContent()">
                 <i class="fas fa-copy"></i> Copy
               </button>
-              <form method="POST" action="" style="display:inline">
+              <form method="POST" action="generate.php" style="display:inline">
                 <input type="hidden" name="title"   value="<?php echo htmlspecialchars($_POST['prompt']); ?>">
                 <input type="hidden" name="content" value="<?php echo htmlspecialchars($generated_content); ?>">
-                <button type="submit" name="save_favorite" class="btn-fav">
+                <button type="submit" name="save_favorite" value="1" class="btn-fav">
                   <i class="fas fa-heart"></i> Save
                 </button>
               </form>
