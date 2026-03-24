@@ -62,16 +62,32 @@ $err  = '';
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['action']==='create_post') {
     $caption  = sanitize($conn, trim((!empty($_POST['caption']) ? $_POST['caption'] : '')));
     $category = sanitize($conn, trim((!empty($_POST['category']) ? $_POST['category'] : 'General')));
-    $img      = null;
+    $images   = [];
 
-    if (!empty($_FILES['post_image']['name'])) {
-        $img = uploadFeedImage($_FILES['post_image'], $err);
-        if ($err) jsonOut(['ok'=>false,'error'=>$err]);
+    // Handle multiple image uploads
+    if (!empty($_FILES['post_images']['name'][0])) {
+        $fileCount = count($_FILES['post_images']['name']);
+        if ($fileCount > 5) jsonOut(['ok'=>false,'error'=>'Maximum 5 images allowed.']);
+        
+        for ($i = 0; $i < $fileCount; $i++) {
+            $file = [
+                'name' => $_FILES['post_images']['name'][$i],
+                'type' => $_FILES['post_images']['type'][$i],
+                'tmp_name' => $_FILES['post_images']['tmp_name'][$i],
+                'error' => $_FILES['post_images']['error'][$i],
+                'size' => $_FILES['post_images']['size'][$i]
+            ];
+            $uploaded = uploadFeedImage($file, $err);
+            if ($err) jsonOut(['ok'=>false,'error'=>$err]);
+            if ($uploaded) $images[] = $uploaded;
+        }
     }
-    if (empty($caption) && empty($img)) jsonOut(['ok'=>false,'error'=>'Add a caption or attach an image.']);
-
+    
+    if (empty($caption) && empty($images)) jsonOut(['ok'=>false,'error'=>'Add a caption or attach images.']);
+    
+    $imagesJson = !empty($images) ? json_encode($images) : null;
     $st = $conn->prepare("INSERT INTO feed_posts (user_id,caption,image_path,category) VALUES (?,?,?,?)");
-    $st->bind_param("isss", $user_id, $caption, $img, $category);
+    $st->bind_param("isss", $user_id, $caption, $imagesJson, $category);
     if ($st->execute()) {
         $pid   = (int)$conn->insert_id;
         $today = date('Y-m-d');
@@ -218,8 +234,17 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     $row->bind_param("ii",$pid,$user_id); $row->execute();
     $row = $row->get_result()->fetch_assoc();
     if ($row) {
-        if ($row['image_path'] && file_exists(FEED_UPLOAD_DIR.$row['image_path']))
-            unlink(FEED_UPLOAD_DIR.$row['image_path']);
+        // Delete multiple images if they exist
+        if ($row['image_path']) {
+            $images = json_decode($row['image_path'], true);
+            if (is_array($images)) {
+                foreach ($images as $img) {
+                    if (file_exists(FEED_UPLOAD_DIR.$img)) unlink(FEED_UPLOAD_DIR.$img);
+                }
+            } else if (file_exists(FEED_UPLOAD_DIR.$row['image_path'])) {
+                unlink(FEED_UPLOAD_DIR.$row['image_path']);
+            }
+        }
         $conn->prepare("DELETE FROM feed_posts WHERE id=? AND user_id=?")->bind_param("ii",$pid,$user_id);
         $del = $conn->prepare("DELETE FROM feed_posts WHERE id=? AND user_id=?");
         $del->bind_param("ii",$pid,$user_id); $del->execute();
@@ -439,8 +464,20 @@ function renderPost(array $p, int $me): string {
     
     $imgHtml = '';
     if (!empty($p['image_path'])) {
-        $src     = FEED_UPLOAD_URL . htmlspecialchars($p['image_path']);
-        $imgHtml = "<div class='post-img-wrap'><img class='post-img' src='$src' alt='Problem screenshot' onclick='openLightbox(this.src)'></div>";
+        $images = json_decode($p['image_path'], true);
+        if (is_array($images) && count($images) > 0) {
+            $gridClass = count($images) === 1 ? 'grid-1' : (count($images) === 2 ? 'grid-2' : 'grid-multi');
+            $imgHtml = "<div class='post-img-grid $gridClass'>";
+            foreach ($images as $img) {
+                $src = FEED_UPLOAD_URL . htmlspecialchars($img);
+                $imgHtml .= "<img class='post-img' src='$src' alt='Image' onclick='openLightbox(this.src)'>";
+            }
+            $imgHtml .= "</div>";
+        } else {
+            // Backward compatibility for old single image format
+            $src = FEED_UPLOAD_URL . htmlspecialchars($p['image_path']);
+            $imgHtml = "<div class='post-img-wrap'><img class='post-img' src='$src' alt='Image' onclick='openLightbox(this.src)'></div>";
+        }
     }
 
     // Fetch comments
@@ -616,13 +653,21 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .drop-icon{font-size:1.5rem;margin-bottom:6px}
 .drop-text{font-size:.8rem;color:var(--text2)}<br>.drop-hint{font-size:.68rem;color:var(--text3);margin-top:3px}
 
-/* Image preview */
-.img-preview-box{display:none;position:relative;margin-bottom:12px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
-.img-preview-box.show{display:block}
-.img-preview-box img{width:100%;max-height:280px;object-fit:cover;display:block}
-.img-preview-box .remove-img{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(244,63,94,.85);color:#fff;border:none;display:grid;place-items:center;cursor:pointer;font-size:.8rem}
+/* Image preview grid */
+.img-preview-grid{display:none;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+.img-preview-grid.show{display:grid}
+.img-preview-item{position:relative;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);aspect-ratio:1}
+.img-preview-item img{width:100%;height:100%;object-fit:cover;display:block}
+.img-preview-item .remove-img{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(244,63,94,.9);color:#fff;border:none;display:grid;place-items:center;cursor:pointer;font-size:.7rem;transition:transform .15s}
+.img-preview-item .remove-img:hover{transform:scale(1.1);background:rgba(244,63,94,1)}
 
-/* Category + post bar */
+/* Post image grid */
+.post-img-grid{display:grid;gap:4px;background:var(--bg3);overflow:hidden}
+.post-img-grid.grid-1{grid-template-columns:1fr}
+.post-img-grid.grid-2{grid-template-columns:repeat(2,1fr)}
+.post-img-grid.grid-multi{grid-template-columns:repeat(3,1fr)}
+.post-img-grid .post-img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;transition:opacity .2s;aspect-ratio:1}
+.post-img-grid .post-img:hover{opacity:.9}
 .create-bottom{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .cat-select{padding:7px 12px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);font-family:'Outfit',sans-serif;font-size:.8rem;color:var(--text2);outline:none;cursor:pointer}
 .cat-select option{background:var(--bg2)}
@@ -909,17 +954,14 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 
           <!-- Drop zone -->
           <div class="drop-zone" id="dropZone">
-            <input type="file" id="postImageFile" accept="image/*" onchange="previewPostImage(this)">
+            <input type="file" id="postImageFile" accept="image/*" multiple onchange="previewPostImages(this)">
             <div class="drop-icon">📸</div>
-            <div class="drop-text">Click or drag &amp; drop a screenshot</div>
-            <div class="drop-hint">JPG · PNG · GIF · WEBP &nbsp;|&nbsp; Max 8 MB</div>
+            <div class="drop-text">Click or drag & drop screenshots</div>
+            <div class="drop-hint">JPG · PNG · GIF · WEBP &nbsp;|&nbsp; Max 5 images, 8 MB each</div>
           </div>
 
           <!-- Preview -->
-          <div class="img-preview-box" id="imgPreviewBox">
-            <img id="imgPreviewEl" src="" alt="preview">
-            <button type="button" class="remove-img" onclick="clearPostImage()"><i class="fas fa-xmark"></i></button>
-          </div>
+          <div class="img-preview-grid" id="imgPreviewGrid"></div>
 
           <div class="create-bottom">
             <select class="cat-select" id="postCategory">
@@ -1030,7 +1072,7 @@ createTrigger.addEventListener('click', () => {
 cancelPost.addEventListener('click', () => {
   createForm.classList.remove('open');
   createTrigger.style.display = '';
-  clearPostImage();
+  clearPostImages();
   document.getElementById('createCaption').value = '';
 });
 
@@ -1040,13 +1082,67 @@ dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.class
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {
   e.preventDefault(); dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) {
-    const dt = new DataTransfer(); dt.items.add(file);
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (files.length > 0) {
+    const dt = new DataTransfer();
+    files.forEach(f => dt.items.add(f));
     document.getElementById('postImageFile').files = dt.files;
-    previewPostImage(document.getElementById('postImageFile'));
+    previewPostImages(document.getElementById('postImageFile'));
   }
 });
+
+// ── Image preview (multiple) ────────────────────────────────
+function previewPostImages(input) {
+  const files = input.files;
+  if (!files || files.length === 0) return;
+  
+  if (files.length > 5) {
+    toast('Maximum 5 images allowed', 'error');
+    input.value = '';
+    return;
+  }
+  
+  const grid = document.getElementById('imgPreviewGrid');
+  grid.innerHTML = '';
+  grid.classList.add('show');
+  dropZone.style.display = 'none';
+  
+  Array.from(files).forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const item = document.createElement('div');
+      item.className = 'img-preview-item';
+      item.innerHTML = `
+        <img src="${e.target.result}" alt="Preview ${idx+1}">
+        <button type="button" class="remove-img" onclick="removePreviewImage(${idx})"><i class="fas fa-xmark"></i></button>
+      `;
+      grid.appendChild(item);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removePreviewImage(idx) {
+  const input = document.getElementById('postImageFile');
+  const dt = new DataTransfer();
+  const files = Array.from(input.files);
+  files.splice(idx, 1);
+  files.forEach(f => dt.items.add(f));
+  input.files = dt.files;
+  
+  if (files.length === 0) {
+    clearPostImages();
+  } else {
+    previewPostImages(input);
+  }
+}
+
+function clearPostImages() {
+  document.getElementById('postImageFile').value = '';
+  document.getElementById('imgPreviewGrid').innerHTML = '';
+  document.getElementById('imgPreviewGrid').classList.remove('show');
+  dropZone.style.display = '';
+}
 
 // ── Image preview ──────────────────────────────────────────
 function previewPostImage(input) {
@@ -1071,10 +1167,10 @@ function clearPostImage() {
 async function submitPost() {
   const btn     = document.getElementById('submitPostBtn');
   const caption = document.getElementById('createCaption').value.trim();
-  const file    = document.getElementById('postImageFile').files[0];
+  const files   = document.getElementById('postImageFile').files;
   const cat     = document.getElementById('postCategory').value;
 
-  if (!caption && !file) { toast('Add a caption or screenshot.','error'); return; }
+  if (!caption && files.length === 0) { toast('Add a caption or images.','error'); return; }
 
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting…';
@@ -1083,14 +1179,16 @@ async function submitPost() {
   fd.append('action', 'create_post');
   fd.append('caption', caption);
   fd.append('category', cat);
-  if (file) fd.append('post_image', file);
+  
+  for (let i = 0; i < files.length; i++) {
+    fd.append('post_images[]', files[i]);
+  }
 
   const data = await api(fd);
   btn.disabled = false;
   btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post';
 
   if (data.ok) {
-    // Reload page to show new post with full PHP render
     location.reload();
   } else {
     toast(data.error || 'Failed to post.', 'error');

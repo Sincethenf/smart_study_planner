@@ -865,32 +865,17 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
   <!-- Page -->
   <div class="page">
 
-    <!-- ── STREAK BANNER ──────────────────────────── -->
-    <div class="streak-banner">
-      <div class="streak-flame">🔥</div>
-      <div class="streak-body">
-        <div class="streak-label">Login Streak</div>
-        <div class="streak-count"><?= $streak ?> Days</div>
-        <div class="streak-sub">Keep learning every day to maintain your streak!</div>
-      </div>
-      <div class="streak-right">
-        <div class="streak-best">Best streak <span><?= $streak ?> 🏆</span></div>
-      </div>
-    </div>
-
     <!-- ── STAT CARDS ─────────────────────────────── -->
     <div class="stats-row">
       <div class="stat-card c-blue">
         <div class="stat-top">
-          <div class="stat-icon"><i class="fas fa-bolt-lightning"></i></div>
-          <span class="trend-chip <?= $trend>=0?'trend-pos':'trend-neg' ?>">
-            <?= $trend>=0?'↑':'↓' ?> <?= abs($trend) ?>%
-          </span>
+          <div class="stat-icon" style="font-size:1.8rem;filter:drop-shadow(0 0 8px rgba(251,146,60,.4))">🔥</div>
+          <span class="trend-chip trend-live">● LIVE</span>
         </div>
         <div>
-          <div class="stat-label">Activities (7d)</div>
-          <div class="stat-value" data-count="<?= $current ?>">0</div>
-          <div class="stat-desc">vs previous period</div>
+          <div class="stat-label">Login Streak</div>
+          <div class="stat-value" data-count="<?= $streak ?>">0</div>
+          <div class="stat-desc">Keep learning every day!</div>
         </div>
       </div>
 
