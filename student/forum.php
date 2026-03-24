@@ -682,8 +682,8 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 @keyframes heartPop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
 
 /* ── Comments section ── */
-.post-comments{border-top:1px solid var(--border)}
-.comments-list{padding:12px 18px 0;display:flex;flex-direction:column;gap:10px}
+.post-comments{border-top:1px solid var(--border);max-height:500px;display:flex;flex-direction:column;position:relative}
+.comments-list{padding:12px 18px 0;display:flex;flex-direction:column;gap:10px;flex:1;overflow-y:auto;max-height:calc(500px - 58px)}
 
 /* Comment */
 .comment-item{display:flex;align-items:flex-start;gap:10px}
@@ -722,7 +722,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .reply-input::placeholder{color:rgba(136,146,170,.4)}
 
 /* Comment input row */
-.comment-input-row{display:flex;align-items:center;gap:10px;padding:12px 18px 14px}
+.comment-input-row{display:flex;align-items:center;gap:10px;padding:12px 18px 14px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);z-index:10}
 .comment-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;flex-shrink:0}
 .comment-input{flex:1;padding:9px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:25px;font-family:'Outfit',sans-serif;font-size:.84rem;color:var(--text);outline:none;transition:border-color .18s var(--ease)}
 .comment-input:focus{border-color:var(--cyan)}
