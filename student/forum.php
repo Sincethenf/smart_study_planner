@@ -363,7 +363,14 @@ function renderComment(array $c, int $me): string {
     }
     
     $replies  = '';
+    $replyCount = count($c['replies']);
     if (!empty($c['replies'])) foreach ($c['replies'] as $rep) $replies .= renderReply($rep, $me, $cid);
+    
+    // Show/hide replies button
+    $toggleRepliesBtn = '';
+    if ($replyCount > 0) {
+        $toggleRepliesBtn = "<button class='toggle-replies-btn action-link' data-cid='$cid'><i class='fas fa-chevron-down'></i> <span class='replies-toggle-text'>Show $replyCount " . ($replyCount === 1 ? 'reply' : 'replies') . "</span></button>";
+    }
     
     // Current user avatar for reply input
     $gUser = $GLOBALS['user'];
@@ -387,9 +394,10 @@ function renderComment(array $c, int $me): string {
         </div>
         <div class='comment-actions'>
           <button class='toggle-reply-btn action-link' data-cid='$cid'><i class='fas fa-reply'></i> Reply</button>
+          $toggleRepliesBtn
           $del
         </div>
-        <div class='replies-wrap' id='replies-$cid'>$replies</div>
+        <div class='replies-wrap' id='replies-$cid' style='display:none'>$replies</div>
         <div class='reply-form-wrap' id='reply-form-$cid' style='display:none'>
           <div class='inline-reply-form'>
             $meReplyAvHtml
@@ -1154,6 +1162,28 @@ document.addEventListener('click', async e => {
   } else toast(d.error||'Error','error');
 });
 
+// ── Toggle replies visibility ──────────────────────────────
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.toggle-replies-btn');
+  if (!btn) return;
+  const cid = btn.dataset.cid;
+  const repliesWrap = document.getElementById('replies-' + cid);
+  if (repliesWrap) {
+    const isHidden = repliesWrap.style.display === 'none';
+    repliesWrap.style.display = isHidden ? 'flex' : 'none';
+    const icon = btn.querySelector('i');
+    const text = btn.querySelector('.replies-toggle-text');
+    if (isHidden) {
+      icon.className = 'fas fa-chevron-up';
+      text.textContent = 'Hide replies';
+    } else {
+      icon.className = 'fas fa-chevron-down';
+      const count = repliesWrap.querySelectorAll('.reply-item').length;
+      text.textContent = `Show ${count} ${count === 1 ? 'reply' : 'replies'}`;
+    }
+  }
+});
+
 // ── Toggle reply form ──────────────────────────────────────
 document.addEventListener('click', e => {
   const btn = e.target.closest('.toggle-reply-btn');
@@ -1178,7 +1208,23 @@ async function postReply(cid) {
   const d = await api(fd);
   if (d.ok) {
     const wrap = document.getElementById('replies-' + cid);
-    if (wrap) wrap.insertAdjacentHTML('beforeend', d.html);
+    if (wrap) {
+      wrap.insertAdjacentHTML('beforeend', d.html);
+      wrap.style.display = 'flex';
+      // Update toggle button
+      const toggleBtn = document.querySelector(`.toggle-replies-btn[data-cid="${cid}"]`);
+      if (toggleBtn) {
+        const count = wrap.querySelectorAll('.reply-item').length;
+        toggleBtn.querySelector('i').className = 'fas fa-chevron-up';
+        toggleBtn.querySelector('.replies-toggle-text').textContent = 'Hide replies';
+      } else {
+        // First reply - add toggle button
+        const actionsDiv = document.querySelector(`#comment-${cid} .comment-actions`);
+        const replyBtn = actionsDiv.querySelector('.toggle-reply-btn');
+        const toggleHTML = `<button class='toggle-replies-btn action-link' data-cid='${cid}'><i class='fas fa-chevron-up'></i> <span class='replies-toggle-text'>Hide replies</span></button>`;
+        replyBtn.insertAdjacentHTML('afterend', toggleHTML);
+      }
+    }
     document.getElementById('reply-form-' + cid).style.display = 'none';
     bindNewElements();
   } else toast(d.error||'Error','error');
