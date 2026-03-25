@@ -833,10 +833,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   animation:slideUp .4s var(--ease) .1s both;
   position:relative;overflow:hidden;
 }
-.announcement-card::before{
-  content:'📢';position:absolute;top:-10px;right:-10px;
-  font-size:5rem;opacity:.1;
-}
 .announcement-header{
   display:flex;align-items:center;gap:10px;margin-bottom:10px;
 }
