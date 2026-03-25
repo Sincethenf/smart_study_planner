@@ -902,6 +902,9 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
       <div class="topbar-sub">Share problems, ask questions, help each other</div>
     </div>
     <div class="topbar-right">
+      <button class="icon-btn" title="AI Assistant" style="background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;border:none">
+        <i class="fas fa-robot"></i>
+      </button>
       <button class="icon-btn" id="toggleFilterBtn" title="Toggle Filters"><i class="fas fa-filter"></i></button>
       <div style="position:relative">
         <button class="icon-btn" id="notifBtn" title="Notifications"><i class="fas fa-bell"></i><span class="notif-badge" id="notifBadge" style="display:none">0</span></button>

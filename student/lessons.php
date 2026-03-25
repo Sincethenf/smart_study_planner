@@ -396,6 +396,9 @@ form.lbtn-form .lbtn{width:100%}
       <div class="topbar-sub">Browse and track your learning progress</div>
     </div>
     <div class="topbar-right">
+      <button class="icon-btn" title="AI Assistant" style="background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;border:none">
+        <i class="fas fa-robot"></i>
+      </button>
       <?php include '../includes/notification_dropdown.php'; ?>
       <a href="profile.php" class="user-pill">
         <div class="pill-avatar">

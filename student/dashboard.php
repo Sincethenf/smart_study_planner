@@ -848,6 +848,9 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
     </nav>
 
     <div class="topbar-right">
+      <button class="icon-btn" title="AI Assistant" style="background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;border:none">
+        <i class="fas fa-robot"></i>
+      </button>
       <?php include '../includes/notification_dropdown.php'; ?>
       <a href="profile.php" class="user-pill">
         <div class="pill-avatar">
