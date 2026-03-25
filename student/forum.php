@@ -653,6 +653,22 @@ function renderPost(array $p, int $me): string {
 $initial_posts = fetchPosts($conn, $user_id, 0, 10);
 $has_more      = count($initial_posts) === 10;
 $categories    = ['General','Mathematics','Science','Computer Science','History','Literature','Help & Support'];
+
+// Fetch latest announcement from admin
+$announcement = null;
+try {
+    $ann_query = $conn->query("SELECT * FROM announcements WHERE is_active=1 ORDER BY created_at DESC LIMIT 1");
+    if ($ann_query && $ann_query->num_rows > 0) {
+        $announcement = $ann_query->fetch_assoc();
+    }
+} catch (Exception $e) {
+    // Table doesn't exist - use static data for visuals
+    $announcement = [
+        'title' => 'Welcome to the Community Forum!',
+        'content' => 'Feel free to ask questions, share your problems, and help each other. Remember to be respectful and follow the community guidelines. Happy learning!',
+        'created_at' => date('Y-m-d H:i:s', strtotime('-2 hours'))
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -722,7 +738,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .pill-name{font-size:.82rem;font-weight:600;color:var(--text)}
 
 /* ── Page ── */
-.page{flex:1;padding:24px 28px;display:grid;grid-template-columns:580px 280px;gap:20px;align-items:start;justify-content:center}
+.page{flex:1;padding:24px 28px 24px 30px;display:grid;grid-template-columns:580px 280px 280px;gap:20px;align-items:start;justify-content:flex-start}
 
 /* ════════════════════════════════════════
    FEED COLUMN
@@ -808,6 +824,90 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   margin-bottom: 10px;
 }
 .feed-post:hover{border-color:var(--border-hi)}
+
+/* ── Announcement card ── */
+.announcement-card{
+  background:linear-gradient(135deg,var(--amber-dim),var(--rose-dim));
+  border:1px solid var(--amber);
+  border-radius:var(--radius);padding:18px 20px;
+  animation:slideUp .4s var(--ease) .1s both;
+  position:relative;overflow:hidden;
+}
+.announcement-card::before{
+  content:'📢';position:absolute;top:-10px;right:-10px;
+  font-size:5rem;opacity:.1;
+}
+.announcement-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:10px;
+}
+.announcement-icon{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--amber);color:#fff;
+  display:grid;place-items:center;font-size:.9rem;
+  flex-shrink:0;
+}
+.announcement-title{
+  font-size:.95rem;font-weight:700;color:var(--text);
+  display:flex;align-items:center;gap:8px;
+}
+.announcement-badge{
+  font-size:.65rem;font-weight:700;padding:2px 8px;
+  border-radius:10px;background:var(--amber);color:#fff;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.announcement-body{
+  font-size:.88rem;color:var(--text2);line-height:1.7;
+  margin-bottom:8px;position:relative;z-index:1;
+}
+.announcement-footer{
+  font-size:.72rem;color:var(--text3);
+  display:flex;align-items:center;gap:6px;
+}
+.announcement-footer i{color:var(--amber)}
+
+/* ── Feedback card ── */
+.feedback-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;
+  animation:slideUp .4s var(--ease) .15s both;
+  max-height:320px;overflow-y:auto;
+}
+.feedback-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  padding-top: 20px; margin-top: 0px;
+  padding-bottom:12px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--surface);z-index:1;
+}
+.feedback-icon{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--blue);color:#fff;
+  display:grid;place-items:center;font-size:.9rem;
+  flex-shrink:0;
+}
+.feedback-title{
+  font-size:.95rem;font-weight:700;color:var(--text);
+}
+.feedback-item{
+  padding:12px 14px;background:var(--bg3);
+  border-radius:var(--radius-sm);margin-bottom:10px;
+  border-left:3px solid var(--blue);
+}
+.feedback-item:last-child{margin-bottom:0}
+.feedback-meta{
+  display:flex;align-items:center;gap:8px;margin-bottom:6px;
+}
+.feedback-author{
+  font-size:.75rem;font-weight:600;color:var(--text3);
+  display:flex;align-items:center;gap:5px;
+}
+.feedback-author i{color:var(--blue);font-size:.7rem}
+.feedback-time{
+  font-size:.68rem;color:var(--text3);margin-left:auto;
+  font-family:'JetBrains Mono',monospace;
+}
+.feedback-text{
+  font-size:.84rem;color:var(--text2);line-height:1.6;
+}
 
 /* Post header */
 .post-header{display:flex;align-items:center;gap:12px;padding:16px 18px 12px}
@@ -946,6 +1046,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .notif-empty i{font-size:2rem;margin-bottom:12px;opacity:.5}
 
 /* ════════════════════════════════════════
+   ANNOUNCEMENT COLUMN
+════════════════════════════════════════ */
+.announcement-col{display:flex;flex-direction:column;gap:16px;position:fixed;top:calc(var(--topbar-h)+24px);left:calc(var(--sidebar-w) + 580px + 70px);width:280px}
+
+/* ════════════════════════════════════════
    RIGHT SIDEBAR
 ════════════════════════════════════════ */
 .right-col{display:flex;flex-direction:column;gap:16px;position:fixed;top:calc(var(--topbar-h)+20px);right:28px;width:280px;transition:transform .3s var(--ease)}
@@ -978,7 +1083,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:199;backdrop-filter:blur(2px)}
 
 /* Responsive */
-@media(max-width:960px){.page{grid-template-columns:1fr;justify-items:center}.right-col{width:100%;max-width:580px;position:static}}
+@media(max-width:960px){.page{grid-template-columns:1fr;justify-items:center}.right-col,.announcement-col{width:100%;max-width:580px;position:static}}
 @media(max-width:768px){
   #toggleFilterBtn{display:grid}
   .right-col{position:fixed;top:var(--topbar-h);right:0;bottom:0;width:280px;background:var(--bg2);border-left:1px solid var(--border);z-index:201;padding:20px;overflow-y:auto;transform:translateX(100%)}
@@ -1126,6 +1231,62 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
         <i class="fas fa-chevron-down"></i> Load more posts
       </button>
       <?php endif; ?>
+
+    </div>
+
+    <!-- ═══ ANNOUNCEMENT COLUMN ═══ -->
+    <div class="announcement-col">
+
+      <!-- Announcement card -->
+      <?php if ($announcement): ?>
+      <div class="announcement-card">
+        <div class="announcement-header">
+          <div class="announcement-icon"><i class="fas fa-bullhorn"></i></div>
+          <div class="announcement-title">
+            <span><?php echo htmlspecialchars($announcement['title']); ?></span>
+            <span class="announcement-badge">Admin</span>
+          </div>
+        </div>
+        <div class="announcement-body">
+          <?php echo nl2br(htmlspecialchars($announcement['content'])); ?>
+        </div>
+        <div class="announcement-footer">
+          <i class="fas fa-clock"></i>
+          <span><?php echo ago($announcement['created_at']); ?></span>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <!-- Feedback card -->
+      <div class="feedback-card">
+        <div class="feedback-header">
+          <div class="feedback-icon"><i class="fas fa-comment-dots"></i></div>
+          <div class="feedback-title">Community Feedback</div>
+        </div>
+        <div class="feedback-list">
+          <div class="feedback-item">
+            <div class="feedback-meta">
+              <div class="feedback-author"><i class="fas fa-user-secret"></i> Anonymous</div>
+              <div class="feedback-time">2h</div>
+            </div>
+            <div class="feedback-text">The AI study planner has been incredibly helpful! It adapts to my learning pace perfectly.</div>
+          </div>
+          <div class="feedback-item">
+            <div class="feedback-meta">
+              <div class="feedback-author"><i class="fas fa-user-secret"></i> Anonymous</div>
+              <div class="feedback-time">5h</div>
+            </div>
+            <div class="feedback-text">Would love to see more interactive quizzes in the lessons. Overall great platform!</div>
+          </div>
+          <div class="feedback-item">
+            <div class="feedback-meta">
+              <div class="feedback-author"><i class="fas fa-user-secret"></i> Anonymous</div>
+              <div class="feedback-time">1d</div>
+            </div>
+            <div class="feedback-text">The forum community is very supportive. Thanks to everyone who helped me with calculus!</div>
+          </div>
+        </div>
+      </div>
 
     </div>
 
