@@ -98,47 +98,48 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     jsonOut(['ok'=>false,'error'=>'Failed to create post.']);
 }
 
-// ── 2. Toggle like ───────────────────────────────────────────
-if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['action']==='toggle_like') {
+// ── 2. Toggle post reaction ─────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['action']==='toggle_post_reaction') {
     $pid = (int)$_POST['post_id'];
+    $reaction = sanitize($conn, $_POST['reaction_type']);
+    $allowed = ['like','haha','thumbs_up','angry','wow'];
+    if (!in_array($reaction, $allowed)) jsonOut(['ok'=>false,'error'=>'Invalid reaction']);
     
-    // Get the post owner
     $post_owner = $conn->prepare("SELECT user_id FROM feed_posts WHERE id = ?");
     $post_owner->bind_param("i", $pid);
     $post_owner->execute();
     $post_owner_id = $post_owner->get_result()->fetch_assoc()['user_id'];
     
-    $chk = $conn->prepare("SELECT id FROM feed_likes WHERE post_id=? AND user_id=?");
-    $chk->bind_param("ii",$pid,$user_id); $chk->execute(); $chk->store_result();
-    if ($chk->num_rows > 0) {
-        $conn->prepare("DELETE FROM feed_likes WHERE post_id=? AND user_id=?")->bind_param("ii",$pid,$user_id);
-        $conn->prepare("DELETE FROM feed_likes WHERE post_id=? AND user_id=?")->execute();
-        $del = $conn->prepare("DELETE FROM feed_likes WHERE post_id=? AND user_id=?");
-        $del->bind_param("ii",$pid,$user_id); $del->execute();
-        $conn->query("UPDATE feed_posts SET like_count=GREATEST(0,like_count-1) WHERE id=$pid");
-        $liked = false;
-        
-        // Remove notification when unliking
-        if ($post_owner_id && $post_owner_id != $user_id) {
-            $del_notif = $conn->prepare("DELETE FROM notifications WHERE user_id=? AND sender_id=? AND type='like' AND related_id=? AND related_type='post'");
-            $del_notif->bind_param("iii", $post_owner_id, $user_id, $pid);
-            $del_notif->execute();
+    $chk = $conn->prepare("SELECT reaction_type FROM feed_post_reactions WHERE post_id=? AND user_id=?");
+    $chk->bind_param("ii",$pid,$user_id); $chk->execute(); $res = $chk->get_result();
+    
+    if ($res->num_rows > 0) {
+        $old = $res->fetch_assoc()['reaction_type'];
+        if ($old === $reaction) {
+            $del = $conn->prepare("DELETE FROM feed_post_reactions WHERE post_id=? AND user_id=?");
+            $del->bind_param("ii",$pid,$user_id); $del->execute();
+            $conn->query("UPDATE feed_posts SET {$reaction}_count=GREATEST(0,{$reaction}_count-1) WHERE id=$pid");
+        } else {
+            $conn->query("UPDATE feed_post_reactions SET reaction_type='$reaction' WHERE post_id=$pid AND user_id=$user_id");
+            $conn->query("UPDATE feed_posts SET {$old}_count=GREATEST(0,{$old}_count-1), {$reaction}_count={$reaction}_count+1 WHERE id=$pid");
         }
     } else {
-        $ins = $conn->prepare("INSERT INTO feed_likes (post_id,user_id) VALUES (?,?)");
-        $ins->bind_param("ii",$pid,$user_id); $ins->execute();
-        $conn->query("UPDATE feed_posts SET like_count=like_count+1 WHERE id=$pid");
-        $liked = true;
+        $ins = $conn->prepare("INSERT INTO feed_post_reactions (post_id,user_id,reaction_type) VALUES (?,?,?)");
+        $ins->bind_param("iis",$pid,$user_id,$reaction); $ins->execute();
+        $conn->query("UPDATE feed_posts SET {$reaction}_count={$reaction}_count+1 WHERE id=$pid");
         
-        // Create notification when liking someone else's post
         if ($post_owner_id && $post_owner_id != $user_id) {
-            $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'like', '{sender} liked your post', ?, 'post')");
+            $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'reaction', '{sender} reacted to your post', ?, 'post')");
             $notif_stmt->bind_param("iii", $post_owner_id, $user_id, $pid);
             $notif_stmt->execute();
         }
     }
-    $cnt = (int)$conn->query("SELECT like_count FROM feed_posts WHERE id=$pid")->fetch_assoc()['like_count'];
-    jsonOut(['ok'=>true,'liked'=>$liked,'count'=>$cnt]);
+    
+    // Fetch updated reaction data
+    $post = $conn->query("SELECT like_count,haha_count,thumbs_up_count,angry_count,wow_count FROM feed_posts WHERE id=$pid")->fetch_assoc();
+    $myReaction = $conn->query("SELECT reaction_type FROM feed_post_reactions WHERE post_id=$pid AND user_id=$user_id")->fetch_assoc();
+    
+    jsonOut(['ok'=>true,'reactions'=>$post,'my_reaction'=>$myReaction['reaction_type']??null]);
 }
 
 // ── 3. Post comment ──────────────────────────────────────────
@@ -275,7 +276,49 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     jsonOut(['ok'=>$del->affected_rows>0]);
 }
 
-// ── 8. Load more posts (pagination) ─────────────────────────
+// ── 8. Toggle reply like ─────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['action']==='toggle_reply_reaction') {
+    $rid = (int)$_POST['reply_id'];
+    $reaction = sanitize($conn, $_POST['reaction_type']);
+    $allowed = ['like','haha','thumbs_up','angry','wow'];
+    if (!in_array($reaction, $allowed)) jsonOut(['ok'=>false,'error'=>'Invalid reaction']);
+    
+    $reply_owner = $conn->prepare("SELECT user_id FROM feed_replies WHERE id = ?");
+    $reply_owner->bind_param("i", $rid);
+    $reply_owner->execute();
+    $reply_owner_id = $reply_owner->get_result()->fetch_assoc()['user_id'];
+    
+    $chk = $conn->prepare("SELECT reaction_type FROM feed_reply_reactions WHERE reply_id=? AND user_id=?");
+    $chk->bind_param("ii",$rid,$user_id); $chk->execute(); $res = $chk->get_result();
+    
+    if ($res->num_rows > 0) {
+        $old = $res->fetch_assoc()['reaction_type'];
+        if ($old === $reaction) {
+            $del = $conn->prepare("DELETE FROM feed_reply_reactions WHERE reply_id=? AND user_id=?");
+            $del->bind_param("ii",$rid,$user_id); $del->execute();
+            $conn->query("UPDATE feed_replies SET {$reaction}_count=GREATEST(0,{$reaction}_count-1) WHERE id=$rid");
+            jsonOut(['ok'=>true,'reacted'=>false]);
+        } else {
+            $conn->query("UPDATE feed_reply_reactions SET reaction_type='$reaction' WHERE reply_id=$rid AND user_id=$user_id");
+            $conn->query("UPDATE feed_replies SET {$old}_count=GREATEST(0,{$old}_count-1), {$reaction}_count={$reaction}_count+1 WHERE id=$rid");
+            jsonOut(['ok'=>true,'reacted'=>true]);
+        }
+    } else {
+        $ins = $conn->prepare("INSERT INTO feed_reply_reactions (reply_id,user_id,reaction_type) VALUES (?,?,?)");
+        $ins->bind_param("iis",$rid,$user_id,$reaction); $ins->execute();
+        $conn->query("UPDATE feed_replies SET {$reaction}_count={$reaction}_count+1 WHERE id=$rid");
+        
+        if ($reply_owner_id && $reply_owner_id != $user_id) {
+            $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'reaction', '{sender} reacted to your reply', ?, 'reply')");
+            $notif_stmt->bind_param("iii", $reply_owner_id, $user_id, $rid);
+            $notif_stmt->execute();
+        }
+        jsonOut(['ok'=>true,'reacted'=>true]);
+    }
+}
+
+
+// ── 9. Load more posts (pagination) ─────────────────────────
 if ($_SERVER['REQUEST_METHOD']==='GET' && isset($_GET['load_more'])) {
     $offset = (int)((isset($_GET['offset']) ? (int)$_GET['offset'] : 0));
     $posts  = fetchPosts($conn, $user_id, $offset, 5);
@@ -291,9 +334,10 @@ function fetchPosts(mysqli $conn, int $user_id, int $offset=0, int $limit=10): a
     $res = $conn->query("
         SELECT fp.*,
                u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role,
-               (SELECT COUNT(*) FROM feed_likes fl WHERE fl.post_id=fp.id AND fl.user_id=$user_id) AS i_liked
+               pr.reaction_type as my_reaction
         FROM feed_posts fp
         JOIN users u ON fp.user_id=u.id
+        LEFT JOIN feed_post_reactions pr ON fp.id=pr.post_id AND pr.user_id=$user_id
         ORDER BY fp.is_pinned DESC, fp.created_at DESC
         LIMIT $limit OFFSET $offset
     ");
@@ -320,9 +364,11 @@ function fetchComments(mysqli $conn, int $post_id, int $user_id): array {
 
 function fetchReplies(mysqli $conn, int $comment_id, int $user_id): array {
     $res = $conn->query("
-        SELECT fr.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
+        SELECT fr.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role,
+               rr.reaction_type as my_reaction
         FROM feed_replies fr
         JOIN users u ON fr.user_id=u.id
+        LEFT JOIN feed_reply_reactions rr ON fr.id=rr.reply_id AND rr.user_id=$user_id
         WHERE fr.comment_id=$comment_id
         ORDER BY fr.created_at ASC
     ");
@@ -342,7 +388,35 @@ function renderReply(array $r, int $me, int $comment_id): string {
     $mine = ((int)$r['user_id'] === $me);
     $del  = $mine ? "<button class='del-reply-btn action-micro' data-id='$rid' title='Delete'><i class='fas fa-trash'></i></button>" : '';
     
-    // Avatar: use profile picture if available, else colored initial
+    $myReaction = $r['my_reaction'] ?? '';
+    $reactions = [
+        'like' => ['icon'=>'fa-heart', 'count'=>(int)($r['like_count']??0)],
+        'haha' => ['icon'=>'fa-laugh', 'count'=>(int)($r['haha_count']??0)],
+        'thumbs_up' => ['icon'=>'fa-thumbs-up', 'count'=>(int)($r['thumbs_up_count']??0)],
+        'angry' => ['icon'=>'fa-angry', 'count'=>(int)($r['angry_count']??0)],
+        'wow' => ['icon'=>'fa-surprise', 'count'=>(int)($r['wow_count']??0)]
+    ];
+    
+    // Get top 3 reactions by count
+    $sortedReactions = $reactions;
+    uasort($sortedReactions, function($a, $b) { return $b['count'] - $a['count']; });
+    $topReactions = array_slice($sortedReactions, 0, 3, true);
+    
+    $totalCount = array_sum(array_column($reactions, 'count'));
+    $mainIcon = $myReaction ? $reactions[$myReaction]['icon'] : 'fa-heart';
+    $mainActive = $myReaction ? 'active' : '';
+    $countText = $totalCount > 0 ? $totalCount : '';
+    
+    // Build top reactions display
+    $topReactionsHtml = '';
+    if ($totalCount > 0) {
+        foreach ($topReactions as $type => $data) {
+            if ($data['count'] > 0) {
+                $topReactionsHtml .= "<i class='fas {$data['icon']} top-reaction-icon' data-type='$type'></i>";
+            }
+        }
+    }
+    
     $avatarHtml = '';
     if (!empty($r['profile_picture'])) {
         $picPath = '../assets/uploads/profiles/' . htmlspecialchars($r['profile_picture']);
@@ -360,6 +434,19 @@ function renderReply(array $r, int $me, int $comment_id): string {
           <div class='reply-text'>$body</div>
         </div>
         <div class='reply-actions'>
+          <div class='reaction-wrapper'>
+            <button class='main-reaction-btn $mainActive' data-rid='$rid' data-current='$myReaction'>
+              <span class='top-reactions'>$topReactionsHtml</span>
+              <span class='reaction-count'>$countText</span>
+            </button>
+            <div class='reaction-picker' data-rid='$rid'>
+              <button class='picker-reaction' data-reaction='like'><i class='fas fa-heart'></i></button>
+              <button class='picker-reaction' data-reaction='haha'><i class='fas fa-laugh'></i></button>
+              <button class='picker-reaction' data-reaction='thumbs_up'><i class='fas fa-thumbs-up'></i></button>
+              <button class='picker-reaction' data-reaction='angry'><i class='fas fa-angry'></i></button>
+              <button class='picker-reaction' data-reaction='wow'><i class='fas fa-surprise'></i></button>
+            </div>
+          </div>
           <button class='toggle-reply-btn action-link' data-cid='$comment_id'><i class='fas fa-reply'></i> Reply</button>
           $del
         </div>
@@ -443,15 +530,37 @@ function renderPost(array $p, int $me): string {
     $time    = ago($p['created_at']);
     $pid     = (int)$p['id'];
     $caption = nl2br(htmlspecialchars((!empty($p['caption']) ? $p['caption'] : '')));
-    $likes   = (int)$p['like_count'];
     $comments= (int)$p['comment_count'];
-    $liked   = (int)$p['i_liked'] > 0;
-    $likedCls= $liked ? 'liked' : '';
-    $likedIco= $liked ? 'fas' : 'far';
     $cat     = htmlspecialchars((!empty($p['category']) ? $p['category'] : 'General'));
     $mine    = ((int)$p['user_id'] === $me);
     $pinBadge= $p['is_pinned'] ? "<span class='pin-badge'><i class='fas fa-thumbtack'></i> Pinned</span>" : '';
     $delBtn  = $mine ? "<button class='del-post-btn post-menu-btn' data-id='$pid'><i class='fas fa-trash'></i> Delete</button>" : '';
+    
+    $myReaction = $p['my_reaction'] ?? '';
+    $reactions = [
+        'like' => ['icon'=>'fa-heart', 'count'=>(int)($p['like_count']??0)],
+        'haha' => ['icon'=>'fa-laugh', 'count'=>(int)($p['haha_count']??0)],
+        'thumbs_up' => ['icon'=>'fa-thumbs-up', 'count'=>(int)($p['thumbs_up_count']??0)],
+        'angry' => ['icon'=>'fa-angry', 'count'=>(int)($p['angry_count']??0)],
+        'wow' => ['icon'=>'fa-surprise', 'count'=>(int)($p['wow_count']??0)]
+    ];
+    
+    $sortedReactions = $reactions;
+    uasort($sortedReactions, function($a, $b) { return $b['count'] - $a['count']; });
+    $topReactions = array_slice($sortedReactions, 0, 3, true);
+    
+    $totalCount = array_sum(array_column($reactions, 'count'));
+    $mainActive = $myReaction ? 'active' : '';
+    $countText = $totalCount > 0 ? $totalCount : '';
+    
+    $topReactionsHtml = '';
+    if ($totalCount > 0) {
+        foreach ($topReactions as $type => $data) {
+            if ($data['count'] > 0) {
+                $topReactionsHtml .= "<i class='fas {$data['icon']} top-reaction-icon' data-type='$type'></i>";
+            }
+        }
+    }
     
     // Avatar: use profile picture if available, else colored initial
     $avatarHtml = '';
@@ -511,10 +620,19 @@ function renderPost(array $p, int $me): string {
   " . (!empty($p['caption']) ? "<div class='post-caption'>$caption</div>" : '') . "
   $imgHtml
   <div class='post-footer'>
-    <button class='like-btn $likedCls' data-pid='$pid'>
-      <i class='$likedIco fa-heart'></i>
-      <span class='like-count'>$likes</span>
-    </button>
+    <div class='reaction-wrapper'>
+      <button class='main-reaction-btn post-react-btn $mainActive' data-pid='$pid' data-current='$myReaction'>
+        <span class='top-reactions'>$topReactionsHtml</span>
+        <span class='reaction-count'>$countText</span>
+      </button>
+      <div class='reaction-picker' data-pid='$pid'>
+        <button class='picker-reaction' data-reaction='like'><i class='fas fa-heart'></i></button>
+        <button class='picker-reaction' data-reaction='haha'><i class='fas fa-laugh'></i></button>
+        <button class='picker-reaction' data-reaction='thumbs_up'><i class='fas fa-thumbs-up'></i></button>
+        <button class='picker-reaction' data-reaction='angry'><i class='fas fa-angry'></i></button>
+        <button class='picker-reaction' data-reaction='wow'><i class='fas fa-surprise'></i></button>
+      </div>
+    </div>
     <button class='toggle-comments-btn' data-pid='$pid'>
       <i class='far fa-comment'></i>
       <span class='comment-count'>$comments</span>
@@ -713,18 +831,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 
 /* Footer (like + comment counts) */
 .post-footer{display:flex;align-items:center;gap:6px;padding:10px 18px;border-top:1px solid var(--border)}
-.like-btn,.toggle-comments-btn{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:7px 14px;border-radius:25px;border:none;
-  background:transparent;color:var(--text2);
-  font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;
-  cursor:pointer;transition:all .18s var(--ease);
-}
-.like-btn:hover{background:var(--rose-dim);color:var(--rose)}
-.like-btn.liked{color:var(--rose)}
-.like-btn.liked i{animation:heartPop .3s var(--ease)}
+.post-react-btn{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:.82rem;cursor:pointer;transition:all .18s var(--ease);display:flex;align-items:center;gap:6px;color:var(--text2);font-family:'Outfit',sans-serif;font-weight:600}
+.post-react-btn:hover{background:var(--surface2);border-color:var(--border-hi)}
+.post-react-btn.active{background:var(--violet-dim);color:var(--violet);border-color:var(--violet)}
+.toggle-comments-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:25px;border:none;background:transparent;color:var(--text2);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .18s var(--ease)}
 .toggle-comments-btn:hover{background:var(--blue-dim);color:var(--blue)}
-@keyframes heartPop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
 
 /* ── Comments section ── */
 .post-comments{border-top:1px solid var(--border);max-height:500px;display:flex;flex-direction:column;position:relative}
@@ -743,6 +854,8 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .comment-actions{display:flex;align-items:center;gap:10px;margin-top:5px;padding-left:2px}
 .action-link{background:none;border:none;color:var(--text3);font-size:.72rem;cursor:pointer;display:flex;align-items:center;gap:4px;transition:color .15s var(--ease);font-family:'Outfit',sans-serif;font-weight:600;padding:2px 0}
 .action-link:hover{color:var(--blue)}
+.action-link.liked{color:var(--rose)}
+.action-link.liked i{animation:heartPop .3s var(--ease)}
 .action-micro{background:none;border:none;color:var(--text3);font-size:.68rem;cursor:pointer;transition:color .15s var(--ease);padding:2px 5px;border-radius:4px}
 .action-micro:hover{color:var(--rose);background:var(--rose-dim)}
 
@@ -757,7 +870,29 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .reply-role{font-size:.62rem;color:var(--text3);text-transform:capitalize}
 .reply-time{font-size:.62rem;color:var(--text3);margin-left:auto;font-family:'JetBrains Mono',monospace}
 .reply-text{font-size:.8rem;color:var(--text2);line-height:1.55;white-space:pre-wrap;word-break:break-word}
-.reply-actions{display:flex;align-items:center;gap:10px;margin-top:5px;padding-left:2px}
+.reply-actions{display:flex;align-items:center;gap:10px;margin-top:5px;padding-left:2px;flex-wrap:wrap}
+.reaction-wrapper{position:relative;display:inline-block}
+.main-reaction-btn{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:3px 10px;font-size:.72rem;cursor:pointer;transition:all .18s var(--ease);display:flex;align-items:center;gap:4px;color:var(--text3);font-family:'Outfit',sans-serif;font-weight:600;position:relative}
+.main-reaction-btn:hover{background:var(--surface2);border-color:var(--border-hi);transform:scale(1.05)}
+.main-reaction-btn.active{background:var(--violet);color:#fff;border-color:var(--violet)}
+.main-reaction-btn.active i{animation:reactionPop .3s ease}
+.top-reactions{display:flex;gap:2px;align-items:center}
+.top-reaction-icon{font-size:.7rem}
+.top-reaction-icon[data-type="like"]{color:#f43f5e}
+.top-reaction-icon[data-type="haha"]{color:#f59e0b}
+.top-reaction-icon[data-type="thumbs_up"]{color:#3b82f6}
+.top-reaction-icon[data-type="angry"]{color:#f43f5e}
+.top-reaction-icon[data-type="wow"]{color:#f59e0b}
+.reaction-picker{position:absolute;bottom:calc(100% + 8px);left:0;transform:scale(0.8);background:var(--surface);border:1px solid var(--border-hi);border-radius:30px;padding:8px;display:flex;gap:6px;opacity:0;pointer-events:none;transition:all .2s var(--ease);box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:100;white-space:nowrap}
+.reaction-picker.show{opacity:1;pointer-events:all;transform:scale(1)}
+.picker-reaction{width:40px;height:40px;border-radius:50%;background:transparent;border:none;display:grid;place-items:center;font-size:1.2rem;cursor:pointer;transition:all .15s var(--ease);flex-shrink:0}
+.picker-reaction:hover{background:var(--bg3);transform:scale(1.15)}
+.picker-reaction[data-reaction="like"] i{color:#f43f5e}
+.picker-reaction[data-reaction="haha"] i{color:#f59e0b}
+.picker-reaction[data-reaction="thumbs_up"] i{color:#3b82f6}
+.picker-reaction[data-reaction="angry"] i{color:#f43f5e}
+.picker-reaction[data-reaction="wow"] i{color:#f59e0b}
+@keyframes reactionPop{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
 
 /* Reply input */
 .reply-form-wrap{margin-top:8px;padding-left:14px}
@@ -1200,20 +1335,53 @@ async function submitPost() {
   }
 }
 
-// ── Like ───────────────────────────────────────────────────
-document.addEventListener('click', async e => {
-  const btn = e.target.closest('.like-btn');
-  if (!btn) return;
-  const pid = btn.dataset.pid;
-  const fd  = new FormData();
-  fd.append('action','toggle_like'); fd.append('post_id',pid);
-  const d = await api(fd);
-  if (d.ok) {
-    btn.classList.toggle('liked', d.liked);
-    btn.querySelector('i').className = (d.liked ? 'fas' : 'far') + ' fa-heart';
-    btn.querySelector('.like-count').textContent = d.count;
+document.addEventListener('mousedown', e => {
+  const postBtn = e.target.closest('.post-react-btn');
+  if (postBtn) {
+    longPressTimer = setTimeout(() => {
+      const pid = postBtn.dataset.pid;
+      const picker = document.querySelector(`.reaction-picker[data-pid="${pid}"]`);
+      if (picker) {
+        document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('show'));
+        picker.classList.add('show');
+      }
+    }, 500);
   }
 });
+
+document.addEventListener('touchstart', e => {
+  const postBtn = e.target.closest('.post-react-btn');
+  if (postBtn) {
+    longPressTimer = setTimeout(() => {
+      const pid = postBtn.dataset.pid;
+      const picker = document.querySelector(`.reaction-picker[data-pid="${pid}"]`);
+      if (picker) {
+        document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('show'));
+        picker.classList.add('show');
+      }
+    }, 500);
+  }
+});
+
+document.addEventListener('click', async e => {
+  const postBtn = e.target.closest('.post-react-btn');
+  if (postBtn) {
+    const pid = postBtn.dataset.pid;
+    const picker = document.querySelector(`.reaction-picker[data-pid="${pid}"]`);
+    if (picker && picker.classList.contains('show')) return;
+    
+    const currentReaction = postBtn.dataset.current || 'like';
+    const fd = new FormData();
+    fd.append('action','toggle_post_reaction');
+    fd.append('post_id', pid);
+    fd.append('reaction_type', currentReaction);
+    
+    const d = await api(fd);
+    if (d.ok) updatePostReactionUI(pid, d.reactions, d.my_reaction);
+  }
+});
+
+// ── Like ───────────────────────────────────────────────────
 
 // ── Toggle comments ────────────────────────────────────────
 document.addEventListener('click', e => {
@@ -1385,6 +1553,110 @@ document.addEventListener('click', async e => {
   fd.append('action','delete_reply'); fd.append('reply_id',rid);
   const d = await api(fd);
   if (d.ok) { document.getElementById('reply-' + rid)?.remove(); toast('Reply removed.'); }
+});
+
+// ── React to reply (long press) ───────────────────────────
+let longPressTimer = null;
+
+document.addEventListener('mousedown', e => {
+  const btn = e.target.closest('.main-reaction-btn');
+  if (!btn) return;
+  longPressTimer = setTimeout(() => {
+    const rid = btn.dataset.rid;
+    const picker = document.querySelector(`.reaction-picker[data-rid="${rid}"]`);
+    if (picker) {
+      document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('show'));
+      picker.classList.add('show');
+    }
+  }, 500);
+});
+
+document.addEventListener('mouseup', () => {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+});
+
+document.addEventListener('touchstart', e => {
+  const btn = e.target.closest('.main-reaction-btn');
+  if (!btn) return;
+  longPressTimer = setTimeout(() => {
+    const rid = btn.dataset.rid;
+    const picker = document.querySelector(`.reaction-picker[data-rid="${rid}"]`);
+    if (picker) {
+      document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('show'));
+      picker.classList.add('show');
+    }
+  }, 500);
+});
+
+document.addEventListener('touchend', () => {
+  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+});
+
+// Quick click = toggle current/default reaction
+document.addEventListener('click', async e => {
+  const btn = e.target.closest('.main-reaction-btn');
+  if (!btn) return;
+  
+  const rid = btn.dataset.rid;
+  const picker = document.querySelector(`.reaction-picker[data-rid="${rid}"]`);
+  if (picker && picker.classList.contains('show')) return;
+  
+  const currentReaction = btn.dataset.current || 'like';
+  const fd = new FormData();
+  fd.append('action','toggle_reply_reaction');
+  fd.append('reply_id', rid);
+  fd.append('reaction_type', currentReaction);
+  
+  const d = await api(fd);
+  if (d.ok) {
+    const icon = btn.querySelector('i');
+    const countSpan = btn.querySelector('.reaction-count');
+    let count = parseInt(countSpan.textContent) || 0;
+    
+    if (d.reacted) {
+      btn.classList.add('active');
+      btn.dataset.current = currentReaction;
+      count++;
+    } else {
+      btn.classList.remove('active');
+      btn.dataset.current = '';
+      icon.className = 'fas fa-heart';
+      count--;
+    }
+    countSpan.textContent = count > 0 ? count : '';
+  }
+});
+
+// Picker reaction selection
+document.addEventListener('click', async e => {
+  const pickerBtn = e.target.closest('.picker-reaction');
+  if (!pickerBtn) {
+    if (!e.target.closest('.reaction-picker') && !e.target.closest('.main-reaction-btn')) {
+      document.querySelectorAll('.reaction-picker').forEach(p => p.classList.remove('show'));
+    }
+    return;
+  }
+  
+  const reaction = pickerBtn.dataset.reaction;
+  const picker = pickerBtn.closest('.reaction-picker');
+  const pid = picker.dataset.pid;
+  const rid = picker.dataset.rid;
+  
+  if (pid) {
+    const fd = new FormData();
+    fd.append('action','toggle_post_reaction');
+    fd.append('post_id', pid);
+    fd.append('reaction_type', reaction);
+    const d = await api(fd);
+    if (d.ok) { picker.classList.remove('show'); updatePostReactionUI(pid, d.reactions, d.my_reaction); }
+  } else if (rid) {
+    const fd = new FormData();
+    fd.append('action','toggle_reply_reaction');
+    fd.append('reply_id', rid);
+    fd.append('reaction_type', reaction);
+    const d = await api(fd);
+    if (d.ok) { picker.classList.remove('show'); location.reload(); }
+  }
 });
 
 // ── Load more ──────────────────────────────────────────────
@@ -1587,6 +1859,46 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
+// ── Update post reaction UI ────────────────────────────────
+function updatePostReactionUI(pid, reactions, myReaction) {
+  const postBtn = document.querySelector(`.post-react-btn[data-pid="${pid}"]`);
+  if (!postBtn) return;
+  
+  const reactionIcons = {
+    like: 'fa-heart',
+    haha: 'fa-laugh',
+    thumbs_up: 'fa-thumbs-up',
+    angry: 'fa-angry',
+    wow: 'fa-surprise'
+  };
+  
+  const reactionCounts = [
+    {type: 'like', count: parseInt(reactions.like_count) || 0},
+    {type: 'haha', count: parseInt(reactions.haha_count) || 0},
+    {type: 'thumbs_up', count: parseInt(reactions.thumbs_up_count) || 0},
+    {type: 'angry', count: parseInt(reactions.angry_count) || 0},
+    {type: 'wow', count: parseInt(reactions.wow_count) || 0}
+  ];
+  
+  reactionCounts.sort((a, b) => b.count - a.count);
+  const topReactions = reactionCounts.slice(0, 3).filter(r => r.count > 0);
+  const totalCount = reactionCounts.reduce((sum, r) => sum + r.count, 0);
+  
+  const topReactionsHtml = topReactions.map(r => 
+    `<i class='fas ${reactionIcons[r.type]} top-reaction-icon' data-type='${r.type}'></i>`
+  ).join('');
+  
+  postBtn.querySelector('.top-reactions').innerHTML = topReactionsHtml;
+  postBtn.querySelector('.reaction-count').textContent = totalCount > 0 ? totalCount : '';
+  postBtn.dataset.current = myReaction || '';
+  
+  if (myReaction) {
+    postBtn.classList.add('active');
+  } else {
+    postBtn.classList.remove('active');
+  }
+}
 
 // ── Bind events on dynamic content ────────────────────────
 function bindNewElements() { /* events are delegated — nothing extra needed */ }

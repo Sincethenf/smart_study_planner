@@ -175,7 +175,25 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .action-btn:hover{border-color:var(--border-hi);color:var(--text)}
 .action-btn.delete:hover{background:var(--rose-dim);border-color:rgba(244,63,94,.3);color:var(--rose)}
 
-.card-content{font-size:.82rem;color:var(--text2);line-height:1.7;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.card-content{font-size:.82rem;color:var(--text2);line-height:1.7;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;transition:all .3s var(--ease);cursor:pointer}
+.card-content.expanded{display:block;-webkit-line-clamp:unset;max-height:none}
+
+/* ═══════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════ */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;animation:fadeIn .3s var(--ease)}
+.modal-overlay.open{display:flex}
+.modal-content{background:var(--surface);border:1px solid var(--border-hi);border-radius:var(--radius);max-width:700px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:slideUpModal .3s var(--ease)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);gap:16px}
+.modal-title{font-size:1.1rem;font-weight:700;color:var(--text);letter-spacing:-.01em;flex:1;line-height:1.4}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:grid;place-items:center;color:var(--text3);cursor:pointer;transition:all .18s var(--ease);flex-shrink:0}
+.modal-close:hover{background:var(--rose-dim);border-color:rgba(244,63,94,.3);color:var(--rose)}
+.modal-body{padding:24px;overflow-y:auto;flex:1;font-size:.88rem;color:var(--text2);line-height:1.8;white-space:pre-wrap;word-break:break-word}
+.modal-footer{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-top:1px solid var(--border)}
+.modal-type{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;background:var(--violet-dim);color:var(--violet)}
+.modal-date{font-size:.75rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUpModal{from{opacity:0;transform:translateY(30px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 .card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border);margin-top:auto}
 .type-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.68rem;font-weight:700;background:var(--violet-dim);color:var(--violet)}
@@ -316,7 +334,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
             </div>
           </div>
           
-          <div class="card-content">
+          <div class="card-content" onclick="openModal('<?php echo htmlspecialchars(addslashes($favorite['title'])); ?>', `<?php echo htmlspecialchars(str_replace(['`', '\r\n', '\n', '\r'], ['\`', '\n', '\n', '\n'], $favorite['content_data'])); ?>`, '<?php echo ucfirst($favorite['content_type']); ?>', '<?php echo date('M d, Y', strtotime($favorite['created_at'])); ?>')">
             <?php echo nl2br(htmlspecialchars($favorite['content_data'])); ?>
           </div>
           
@@ -348,6 +366,23 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 </div><!-- /main -->
 </div><!-- /shell -->
 
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <button class="modal-close" onclick="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <span class="modal-type" id="modalType"></span>
+      <span class="modal-date" id="modalDate"></span>
+    </div>
+  </div>
+</div>
+
 <script>
 // Loading Screen
 window.addEventListener('load', function() {
@@ -366,6 +401,26 @@ document.getElementById('menuBtn')?.addEventListener('click', () => {
 overlay.addEventListener('click', () => {
   sidebar.classList.remove('open');
   overlay.classList.remove('open');
+});
+
+// ── Modal functions ──────────────────────────────────────────
+function openModal(title, content, type, date) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = content.replace(/\n/g, '<br>');
+  document.getElementById('modalType').innerHTML = '<i class="fas fa-tag"></i> ' + type;
+  document.getElementById('modalDate').textContent = date;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
 });
 </script>
 

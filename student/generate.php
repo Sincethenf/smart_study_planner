@@ -108,7 +108,7 @@ if (isset($_POST['save_favorite'])) {
 }
 
 // Recent generations for history panel
-$histQ = $conn->prepare("SELECT id, title, type, created_at FROM generated_content WHERE user_id = ? ORDER BY created_at DESC LIMIT 8");
+$histQ = $conn->prepare("SELECT id, title, type, created_at FROM generated_content WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
 $histQ->bind_param("i", $user_id);
 $histQ->execute();
 $history = $histQ->get_result();
@@ -336,7 +336,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);overflow:hidden;
   animation:slideUp .4s var(--ease) .1s both;
-  position:sticky;top:calc(var(--topbar-h) + 20px);
 }
 .history-head{
   display:flex;align-items:center;justify-content:space-between;
@@ -344,7 +343,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 }
 .history-title{font-size:.875rem;font-weight:700}
 .history-count{font-size:.7rem;color:var(--text3);font-family:'JetBrains Mono',monospace;background:var(--bg3);padding:2px 8px;border-radius:10px}
-.history-list{display:flex;flex-direction:column;max-height:460px;overflow-y:auto}
+.history-list{display:flex;flex-direction:column;max-height:195px;overflow-y:auto}
 .history-item{
   display:flex;align-items:center;gap:10px;
   padding:12px 18px;border-bottom:1px solid var(--border);
@@ -432,7 +431,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   .topbar{padding:0 14px}
   .input-row{flex-direction:column}
   .gen-btn{width:100%;justify-content:center}
-  .history-card{position:static}
+  .gen-layout > div:last-child{position:static !important}
 }
 </style>
 </head>
@@ -611,7 +610,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
       </div><!-- /left col -->
 
       <!-- RIGHT: history + tips -->
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:16px;position:sticky;top:calc(var(--topbar-h) + 26px)">
 
         <!-- History -->
         <div class="history-card">
@@ -619,7 +618,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
             <div class="history-title">Recent Generations</div>
             <span class="history-count"><?php echo $totalGen; ?></span>
           </div>
-          <div class="history-list">
+          <div class="history-list" id="historyList">
             <?php if ($history->num_rows > 0): ?>
               <?php while ($h = $history->fetch_assoc()): ?>
               <div class="history-item" onclick="document.getElementById('promptInput').value = '<?php echo htmlspecialchars(addslashes($h['title'])); ?>'; document.getElementById('promptInput').focus()">
