@@ -1181,6 +1181,8 @@ tbody td{padding:12px 22px;font-size:.84rem;color:var(--text2);vertical-align:mi
 </div><!-- /main -->
 </div><!-- /shell -->
 
+<?php include '../includes/ai_chat.php'; ?>
+
 <script>
 // ── Loading Screen ────────────────────────────────────────
 window.addEventListener('load', function() {

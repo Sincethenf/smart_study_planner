@@ -1031,6 +1031,8 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 </div><!-- /main -->
 </div><!-- /shell -->
 
+<?php include '../includes/ai_chat.php'; ?>
+
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-xmark"></i></button>

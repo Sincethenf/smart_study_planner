@@ -627,5 +627,8 @@ document.getElementById('overlay').addEventListener('click', () => {
   document.getElementById('overlay').classList.remove('open');
 });
 </script>
+
+<?php include '../includes/ai_chat.php'; ?>
+
 </body>
 </html>

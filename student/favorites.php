@@ -368,5 +368,8 @@ overlay.addEventListener('click', () => {
   overlay.classList.remove('open');
 });
 </script>
+
+<?php include '../includes/ai_chat.php'; ?>
+
 </body>
 </html>
