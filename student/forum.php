@@ -406,7 +406,6 @@ function renderReply(array $r, int $me, int $comment_id): string {
     $topReactions = array_slice($sortedReactions, 0, 3, true);
     
     $totalCount = array_sum(array_column($reactions, 'count'));
-    $mainIcon = $myReaction ? $reactions[$myReaction]['icon'] : 'fa-heart';
     $mainActive = $myReaction ? 'active' : '';
     $countText = $totalCount > 0 ? $totalCount : '';
     
@@ -418,6 +417,8 @@ function renderReply(array $r, int $me, int $comment_id): string {
                 $topReactionsHtml .= "<i class='fas {$data['icon']} top-reaction-icon' data-type='$type'></i>";
             }
         }
+    } else {
+        $topReactionsHtml = "<i class='fas fa-heart' style='color:var(--text3)'></i>";
     }
     
     $avatarHtml = '';
