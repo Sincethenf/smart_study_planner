@@ -15,7 +15,7 @@
         <i class="fas fa-robot"></i>
       </div>
       <div class="ai-bubble">
-        <p>👋 Hi! I'm your AI study assistant. How can I help you today?</p>
+        <p>Please Connect to Internet</p>
       </div>
     </div>
   </div>
