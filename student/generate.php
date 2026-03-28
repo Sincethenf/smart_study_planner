@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['prompt'])) {
 
     if (!empty($prompt)) {
         // Call Gemini API
-        $apiKey = 'AIzaSyDUWOAwZKeR13yq-UxH7M0W04mU9q0Nw0Q';
+        $apiKey = '';
+        // AIzaSyDUWOAwZKeR13yq-UxH7M0W04mU9q0Nw0Q
         $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' . $apiKey;
         
         $requestData = [

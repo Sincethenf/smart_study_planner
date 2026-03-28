@@ -425,8 +425,24 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
            data-id="<?php echo $notif['id']; ?>"
            data-type="<?php echo $type; ?>"
            data-read="<?php echo $notif['is_read'] ? '1' : '0'; ?>"
-           onclick="markAsRead(<?php echo $notif['id']; ?>)"
-           style="animation-delay:<?php echo $idx * 0.04; ?>s">
+           data-link="<?php 
+             // Generate link based on notification type and related_type
+             $link = 'forum.php';
+             if ($notif['related_type'] === 'post' && $notif['related_id']) {
+                 $link = 'forum.php?post=' . $notif['related_id'];
+             } elseif ($notif['related_type'] === 'comment' && $notif['related_id']) {
+                 $comment_query = $conn->prepare("SELECT post_id FROM feed_comments WHERE id = ?");
+                 $comment_query->bind_param("i", $notif['related_id']);
+                 $comment_query->execute();
+                 $comment_result = $comment_query->get_result();
+                 if ($comment_row = $comment_result->fetch_assoc()) {
+                     $link = 'forum.php?post=' . $comment_row['post_id'] . '&comment=' . $notif['related_id'];
+                 }
+             }
+             echo htmlspecialchars($link);
+           ?>"
+           onclick="goToNotification(<?php echo $notif['id']; ?>)"
+           style="animation-delay:<?php echo $idx * 0.04; ?>s;cursor:pointer">
 
         <?php if (!$notif['is_read']): ?>
         <span class="unread-dot"></span>
@@ -503,7 +519,31 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 </div><!-- /shell -->
 
 <script>
-// ── Mark single as read ───────────────────────────────────
+// ── Go to notification and mark as read ───────────────────
+async function goToNotification(id) {
+  const item = document.getElementById('notif-' + id);
+  if (!item) return;
+  
+  const link = item.dataset.link;
+  
+  // Mark as read if unread
+  if (item.dataset.read !== '1') {
+    const fd = new FormData();
+    fd.append('action', 'mark_read');
+    fd.append('notification_id', id);
+    
+    try {
+      await fetch('notifications.php', { method: 'POST', body: fd });
+    } catch(e) { console.error(e); }
+  }
+  
+  // Redirect to the notification link
+  if (link) {
+    window.location.href = link;
+  }
+}
+
+// ── Mark single as read (without redirect) ────────────────
 async function markAsRead(id) {
   const item = document.getElementById('notif-' + id);
   if (!item || item.dataset.read === '1') return;

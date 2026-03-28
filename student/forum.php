@@ -297,11 +297,9 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
             $del = $conn->prepare("DELETE FROM feed_reply_reactions WHERE reply_id=? AND user_id=?");
             $del->bind_param("ii",$rid,$user_id); $del->execute();
             $conn->query("UPDATE feed_replies SET {$reaction}_count=GREATEST(0,{$reaction}_count-1) WHERE id=$rid");
-            jsonOut(['ok'=>true,'reacted'=>false]);
         } else {
             $conn->query("UPDATE feed_reply_reactions SET reaction_type='$reaction' WHERE reply_id=$rid AND user_id=$user_id");
             $conn->query("UPDATE feed_replies SET {$old}_count=GREATEST(0,{$old}_count-1), {$reaction}_count={$reaction}_count+1 WHERE id=$rid");
-            jsonOut(['ok'=>true,'reacted'=>true]);
         }
     } else {
         $ins = $conn->prepare("INSERT INTO feed_reply_reactions (reply_id,user_id,reaction_type) VALUES (?,?,?)");
@@ -313,8 +311,13 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
             $notif_stmt->bind_param("iii", $reply_owner_id, $user_id, $rid);
             $notif_stmt->execute();
         }
-        jsonOut(['ok'=>true,'reacted'=>true]);
     }
+    
+    // Fetch updated reaction data
+    $reply = $conn->query("SELECT like_count,haha_count,thumbs_up_count,angry_count,wow_count FROM feed_replies WHERE id=$rid")->fetch_assoc();
+    $myReaction = $conn->query("SELECT reaction_type FROM feed_reply_reactions WHERE reply_id=$rid AND user_id=$user_id")->fetch_assoc();
+    
+    jsonOut(['ok'=>true,'reactions'=>$reply,'my_reaction'=>$myReaction['reaction_type']??null]);
 }
 
 
@@ -560,6 +563,8 @@ function renderPost(array $p, int $me): string {
                 $topReactionsHtml .= "<i class='fas {$data['icon']} top-reaction-icon' data-type='$type'></i>";
             }
         }
+    } else {
+        $topReactionsHtml = "<i class='fas fa-heart' style='color:var(--text3)'></i>";
     }
     
     // Avatar: use profile picture if available, else colored initial
@@ -1194,12 +1199,12 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
           <!-- Drop zone -->
           <div class="drop-zone" id="dropZone">
             <input type="file" id="postImageFile" accept="image/*" multiple onchange="previewPostImages(this)">
-            <div class="drop-icon">📸</div>
+            <!-- <div class="drop-icon">📸</div> -->
             <div class="drop-text">Click or drag & drop screenshots</div>
             <div class="drop-hint">JPG · PNG · GIF · WEBP &nbsp;|&nbsp; Max 5 images, 8 MB each</div>
           </div>
 
-          <!-- Preview -->
+      
           <div class="img-preview-grid" id="imgPreviewGrid"></div>
 
           <div class="create-bottom">
@@ -1766,23 +1771,51 @@ document.addEventListener('click', async e => {
   
   const d = await api(fd);
   if (d.ok) {
-    const icon = btn.querySelector('i');
-    const countSpan = btn.querySelector('.reaction-count');
-    let count = parseInt(countSpan.textContent) || 0;
-    
-    if (d.reacted) {
-      btn.classList.add('active');
-      btn.dataset.current = currentReaction;
-      count++;
-    } else {
-      btn.classList.remove('active');
-      btn.dataset.current = '';
-      icon.className = 'fas fa-heart';
-      count--;
-    }
-    countSpan.textContent = count > 0 ? count : '';
+    updateReplyReactionUI(rid, d);
   }
 });
+
+function updateReplyReactionUI(rid, data) {
+  const btn = document.querySelector(`.main-reaction-btn[data-rid="${rid}"]`);
+  if (!btn) return;
+  
+  const reactionIcons = {
+    like: 'fa-heart',
+    haha: 'fa-laugh',
+    thumbs_up: 'fa-thumbs-up',
+    angry: 'fa-angry',
+    wow: 'fa-surprise'
+  };
+  
+  const reactions = data.reactions;
+  const myReaction = data.my_reaction;
+  
+  const reactionCounts = [
+    {type: 'like', count: parseInt(reactions.like_count) || 0},
+    {type: 'haha', count: parseInt(reactions.haha_count) || 0},
+    {type: 'thumbs_up', count: parseInt(reactions.thumbs_up_count) || 0},
+    {type: 'angry', count: parseInt(reactions.angry_count) || 0},
+    {type: 'wow', count: parseInt(reactions.wow_count) || 0}
+  ];
+  
+  reactionCounts.sort((a, b) => b.count - a.count);
+  const topReactions = reactionCounts.slice(0, 3).filter(r => r.count > 0);
+  const totalCount = reactionCounts.reduce((sum, r) => sum + r.count, 0);
+  
+  const topReactionsHtml = topReactions.length > 0 
+    ? topReactions.map(r => `<i class='fas ${reactionIcons[r.type]} top-reaction-icon' data-type='${r.type}'></i>`).join('')
+    : "<i class='fas fa-heart' style='color:var(--text3)'></i>";
+  
+  btn.querySelector('.top-reactions').innerHTML = topReactionsHtml;
+  btn.querySelector('.reaction-count').textContent = totalCount > 0 ? totalCount : '';
+  btn.dataset.current = myReaction || '';
+  
+  if (myReaction) {
+    btn.classList.add('active');
+  } else {
+    btn.classList.remove('active');
+  }
+}
 
 // Picker reaction selection
 document.addEventListener('click', async e => {
@@ -1812,7 +1845,10 @@ document.addEventListener('click', async e => {
     fd.append('reply_id', rid);
     fd.append('reaction_type', reaction);
     const d = await api(fd);
-    if (d.ok) { picker.classList.remove('show'); location.reload(); }
+    if (d.ok) { 
+      picker.classList.remove('show');
+      updateReplyReactionUI(rid, d);
+    }
   }
 });
 
@@ -2046,7 +2082,7 @@ function updatePostReactionUI(pid, reactions, myReaction) {
     `<i class='fas ${reactionIcons[r.type]} top-reaction-icon' data-type='${r.type}'></i>`
   ).join('');
   
-  postBtn.querySelector('.top-reactions').innerHTML = topReactionsHtml;
+  postBtn.querySelector('.top-reactions').innerHTML = topReactionsHtml || "<i class='fas fa-heart' style='color:var(--text3)'></i>";
   postBtn.querySelector('.reaction-count').textContent = totalCount > 0 ? totalCount : '';
   postBtn.dataset.current = myReaction || '';
   
