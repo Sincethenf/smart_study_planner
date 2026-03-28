@@ -84,3 +84,17 @@ Account{name=assets, path=C:/xampp/htdocs/smart_study_planner/assets, type=PREDI
 Account{name=logs, path=C:/xampp/htdocs/smart_study_planner/.git/logs, type=PREDICT}
 2026-03-28 18:11:49.259 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.account.AccountManager - [client:40010105]load account manager finish
 2026-03-28 18:11:49.261 [pool-3-thread-1] INFO  com.rs.mv.mvvs.instance.userspace.UserspaceManager - [framework:30010402]config file(C:\Users\User/.rmv/config) watcher launch successful
+2026-03-28 18:13:42.111 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner/student)
+2026-03-28 18:13:53.384 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner/includes)
+2026-03-28 18:14:20.069 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner/student)
+2026-03-28 18:14:30.560 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner/student)
+2026-03-28 18:14:59.645 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner)
+2026-03-28 18:15:03.912 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner/student)
+2026-03-28 18:15:05.672 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner)
+2026-03-28 18:17:25.994 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.scan.CurrentPathScanner - [client:400205]scan file in current open file directory(C:/xampp/htdocs/smart_study_planner/student)
+2026-03-28 18:18:39.148 [pool-3-thread-1] INFO  com.rs.mv.mvvs.rmv.documentation.BasicDocumentation - [framework:30020201]project documentation update start
+2026-03-28 18:18:39.152 [pool-3-thread-1] INFO  com.rs.mv.mvvs.rmv.documentation.BasicDocumentation - [framework:30020202]project documentation update end
+2026-03-28 18:18:39.169 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.config.DirsConfigReader - [client:400206]parse dir config information
+2026-03-28 18:18:39.174 [pool-3-thread-1] INFO  com.rs.mv.mvvs.client.catalog.from.config.MappingConfigReader - [client:400207]parse mapping config information
+2026-03-28 18:18:39.175 [pool-3-thread-1] INFO  com.rs.mv.mvvs.common.convertor.ConvertorManager - [framework:30030201]convertors for folder(C:/xampp/htdocs/smart_study_planner) reload start
+2026-03-28 18:18:39.177 [pool-3-thread-1] INFO  com.rs.mv.mvvs.common.convertor.ConvertorManager - [framework:30030202]convertors for folder(C:/xampp/htdocs/smart_study_planner) load end
