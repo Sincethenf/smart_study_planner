@@ -118,15 +118,22 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
         if ($old === $reaction) {
             $del = $conn->prepare("DELETE FROM feed_post_reactions WHERE post_id=? AND user_id=?");
             $del->bind_param("ii",$pid,$user_id); $del->execute();
-            $conn->query("UPDATE feed_posts SET {$reaction}_count=GREATEST(0,{$reaction}_count-1) WHERE id=$pid");
+            $query = "UPDATE feed_posts SET {$reaction}_count=GREATEST(0,{$reaction}_count-1) WHERE id=?";
+            $upd = $conn->prepare($query);
+            $upd->bind_param("i",$pid); $upd->execute();
         } else {
-            $conn->query("UPDATE feed_post_reactions SET reaction_type='$reaction' WHERE post_id=$pid AND user_id=$user_id");
-            $conn->query("UPDATE feed_posts SET {$old}_count=GREATEST(0,{$old}_count-1), {$reaction}_count={$reaction}_count+1 WHERE id=$pid");
+            $upd1 = $conn->prepare("UPDATE feed_post_reactions SET reaction_type=? WHERE post_id=? AND user_id=?");
+            $upd1->bind_param("sii",$reaction,$pid,$user_id); $upd1->execute();
+            $query2 = "UPDATE feed_posts SET {$old}_count=GREATEST(0,{$old}_count-1), {$reaction}_count={$reaction}_count+1 WHERE id=?";
+            $upd2 = $conn->prepare($query2);
+            $upd2->bind_param("i",$pid); $upd2->execute();
         }
     } else {
         $ins = $conn->prepare("INSERT INTO feed_post_reactions (post_id,user_id,reaction_type) VALUES (?,?,?)");
         $ins->bind_param("iis",$pid,$user_id,$reaction); $ins->execute();
-        $conn->query("UPDATE feed_posts SET {$reaction}_count={$reaction}_count+1 WHERE id=$pid");
+        $query = "UPDATE feed_posts SET {$reaction}_count={$reaction}_count+1 WHERE id=?";
+        $upd = $conn->prepare($query);
+        $upd->bind_param("i",$pid); $upd->execute();
         
         if ($post_owner_id && $post_owner_id != $user_id) {
             $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'reaction', '{sender} reacted to your post', ?, 'post')");
@@ -136,8 +143,12 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     }
     
     // Fetch updated reaction data
-    $post = $conn->query("SELECT like_count,haha_count,thumbs_up_count,angry_count,wow_count FROM feed_posts WHERE id=$pid")->fetch_assoc();
-    $myReaction = $conn->query("SELECT reaction_type FROM feed_post_reactions WHERE post_id=$pid AND user_id=$user_id")->fetch_assoc();
+    $fetch_post = $conn->prepare("SELECT like_count,haha_count,thumbs_up_count,angry_count,wow_count FROM feed_posts WHERE id=?");
+    $fetch_post->bind_param("i",$pid); $fetch_post->execute();
+    $post = $fetch_post->get_result()->fetch_assoc();
+    $fetch_my = $conn->prepare("SELECT reaction_type FROM feed_post_reactions WHERE post_id=? AND user_id=?");
+    $fetch_my->bind_param("ii",$pid,$user_id); $fetch_my->execute();
+    $myReaction = $fetch_my->get_result()->fetch_assoc();
     
     jsonOut(['ok'=>true,'reactions'=>$post,'my_reaction'=>$myReaction['reaction_type']??null]);
 }
@@ -158,7 +169,8 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     $st->bind_param("iis",$pid,$user_id,$content);
     if ($st->execute()) {
         $cid = (int)$conn->insert_id;
-        $conn->query("UPDATE feed_posts SET comment_count=comment_count+1 WHERE id=$pid");
+        $upd = $conn->prepare("UPDATE feed_posts SET comment_count=comment_count+1 WHERE id=?");
+        $upd->bind_param("i",$pid); $upd->execute();
         
         // Create notification if commenting on someone else's post
         if ($post_owner_id && $post_owner_id != $user_id) {
@@ -180,7 +192,9 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
         $comment_data['replies'] = [];
         
         // Return rendered HTML of new comment
-        $new_cnt = (int)$conn->query("SELECT comment_count FROM feed_posts WHERE id=$pid")->fetch_assoc()['comment_count'];
+        $fetch_cnt = $conn->prepare("SELECT comment_count FROM feed_posts WHERE id=?");
+        $fetch_cnt->bind_param("i",$pid); $fetch_cnt->execute();
+        $new_cnt = (int)$fetch_cnt->get_result()->fetch_assoc()['comment_count'];
         jsonOut(['ok'=>true,'comment_id'=>$cid,'comment_count'=>$new_cnt,
             'html'=>renderComment($comment_data, $user_id)]);
     }
@@ -246,7 +260,6 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
                 unlink(FEED_UPLOAD_DIR.$row['image_path']);
             }
         }
-        $conn->prepare("DELETE FROM feed_posts WHERE id=? AND user_id=?")->bind_param("ii",$pid,$user_id);
         $del = $conn->prepare("DELETE FROM feed_posts WHERE id=? AND user_id=?");
         $del->bind_param("ii",$pid,$user_id); $del->execute();
         jsonOut(['ok'=>true]);
@@ -261,8 +274,11 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     $del = $conn->prepare("DELETE FROM feed_comments WHERE id=? AND user_id=?");
     $del->bind_param("ii",$cid,$user_id); $del->execute();
     if ($del->affected_rows > 0) {
-        $conn->query("UPDATE feed_posts SET comment_count=GREATEST(0,comment_count-1) WHERE id=$pid");
-        $new_cnt = (int)$conn->query("SELECT comment_count FROM feed_posts WHERE id=$pid")->fetch_assoc()['comment_count'];
+        $upd = $conn->prepare("UPDATE feed_posts SET comment_count=GREATEST(0,comment_count-1) WHERE id=?");
+        $upd->bind_param("i",$pid); $upd->execute();
+        $fetch = $conn->prepare("SELECT comment_count FROM feed_posts WHERE id=?");
+        $fetch->bind_param("i",$pid); $fetch->execute();
+        $new_cnt = (int)$fetch->get_result()->fetch_assoc()['comment_count'];
         jsonOut(['ok'=>true,'comment_count'=>$new_cnt]);
     }
     jsonOut(['ok'=>false]);
@@ -296,15 +312,22 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
         if ($old === $reaction) {
             $del = $conn->prepare("DELETE FROM feed_reply_reactions WHERE reply_id=? AND user_id=?");
             $del->bind_param("ii",$rid,$user_id); $del->execute();
-            $conn->query("UPDATE feed_replies SET {$reaction}_count=GREATEST(0,{$reaction}_count-1) WHERE id=$rid");
+            $query = "UPDATE feed_replies SET {$reaction}_count=GREATEST(0,{$reaction}_count-1) WHERE id=?";
+            $upd = $conn->prepare($query);
+            $upd->bind_param("i",$rid); $upd->execute();
         } else {
-            $conn->query("UPDATE feed_reply_reactions SET reaction_type='$reaction' WHERE reply_id=$rid AND user_id=$user_id");
-            $conn->query("UPDATE feed_replies SET {$old}_count=GREATEST(0,{$old}_count-1), {$reaction}_count={$reaction}_count+1 WHERE id=$rid");
+            $upd1 = $conn->prepare("UPDATE feed_reply_reactions SET reaction_type=? WHERE reply_id=? AND user_id=?");
+            $upd1->bind_param("sii",$reaction,$rid,$user_id); $upd1->execute();
+            $query2 = "UPDATE feed_replies SET {$old}_count=GREATEST(0,{$old}_count-1), {$reaction}_count={$reaction}_count+1 WHERE id=?";
+            $upd2 = $conn->prepare($query2);
+            $upd2->bind_param("i",$rid); $upd2->execute();
         }
     } else {
         $ins = $conn->prepare("INSERT INTO feed_reply_reactions (reply_id,user_id,reaction_type) VALUES (?,?,?)");
         $ins->bind_param("iis",$rid,$user_id,$reaction); $ins->execute();
-        $conn->query("UPDATE feed_replies SET {$reaction}_count={$reaction}_count+1 WHERE id=$rid");
+        $query = "UPDATE feed_replies SET {$reaction}_count={$reaction}_count+1 WHERE id=?";
+        $upd = $conn->prepare($query);
+        $upd->bind_param("i",$rid); $upd->execute();
         
         if ($reply_owner_id && $reply_owner_id != $user_id) {
             $notif_stmt = $conn->prepare("INSERT INTO notifications (user_id, sender_id, type, message, related_id, related_type) VALUES (?, ?, 'reaction', '{sender} reacted to your reply', ?, 'reply')");
@@ -314,8 +337,12 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['ac
     }
     
     // Fetch updated reaction data
-    $reply = $conn->query("SELECT like_count,haha_count,thumbs_up_count,angry_count,wow_count FROM feed_replies WHERE id=$rid")->fetch_assoc();
-    $myReaction = $conn->query("SELECT reaction_type FROM feed_reply_reactions WHERE reply_id=$rid AND user_id=$user_id")->fetch_assoc();
+    $fetch_reply = $conn->prepare("SELECT like_count,haha_count,thumbs_up_count,angry_count,wow_count FROM feed_replies WHERE id=?");
+    $fetch_reply->bind_param("i",$rid); $fetch_reply->execute();
+    $reply = $fetch_reply->get_result()->fetch_assoc();
+    $fetch_my = $conn->prepare("SELECT reaction_type FROM feed_reply_reactions WHERE reply_id=? AND user_id=?");
+    $fetch_my->bind_param("ii",$rid,$user_id); $fetch_my->execute();
+    $myReaction = $fetch_my->get_result()->fetch_assoc();
     
     jsonOut(['ok'=>true,'reactions'=>$reply,'my_reaction'=>$myReaction['reaction_type']??null]);
 }
@@ -334,29 +361,35 @@ if ($_SERVER['REQUEST_METHOD']==='GET' && isset($_GET['load_more'])) {
 //  RENDER HELPERS (return HTML strings for AJAX + initial load)
 // ════════════════════════════════════════════════════════════
 function fetchPosts(mysqli $conn, int $user_id, int $offset=0, int $limit=10): array {
-    $res = $conn->query("
+    $stmt = $conn->prepare("
         SELECT fp.*,
                u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role,
                pr.reaction_type as my_reaction
         FROM feed_posts fp
         JOIN users u ON fp.user_id=u.id
-        LEFT JOIN feed_post_reactions pr ON fp.id=pr.post_id AND pr.user_id=$user_id
+        LEFT JOIN feed_post_reactions pr ON fp.id=pr.post_id AND pr.user_id=?
         ORDER BY fp.is_pinned DESC, fp.created_at DESC
-        LIMIT $limit OFFSET $offset
+        LIMIT ? OFFSET ?
     ");
+    $stmt->bind_param("iii",$user_id,$limit,$offset);
+    $stmt->execute();
+    $res = $stmt->get_result();
     $posts = [];
     while ($r = $res->fetch_assoc()) $posts[] = $r;
     return $posts;
 }
 
 function fetchComments(mysqli $conn, int $post_id, int $user_id): array {
-    $res = $conn->query("
+    $stmt = $conn->prepare("
         SELECT fc.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role
         FROM feed_comments fc
         JOIN users u ON fc.user_id=u.id
-        WHERE fc.post_id=$post_id
+        WHERE fc.post_id=?
         ORDER BY fc.created_at ASC
     ");
+    $stmt->bind_param("i",$post_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
     $comments = [];
     while ($r = $res->fetch_assoc()) {
         $r['replies'] = fetchReplies($conn, $r['id'], $user_id);
@@ -366,15 +399,18 @@ function fetchComments(mysqli $conn, int $post_id, int $user_id): array {
 }
 
 function fetchReplies(mysqli $conn, int $comment_id, int $user_id): array {
-    $res = $conn->query("
+    $stmt = $conn->prepare("
         SELECT fr.*, u.full_name, u.profile_picture, COALESCE(u.avatar_color,'#4f46e5') AS avatar_color, u.role,
                rr.reaction_type as my_reaction
         FROM feed_replies fr
         JOIN users u ON fr.user_id=u.id
-        LEFT JOIN feed_reply_reactions rr ON fr.id=rr.reply_id AND rr.user_id=$user_id
-        WHERE fr.comment_id=$comment_id
+        LEFT JOIN feed_reply_reactions rr ON fr.id=rr.reply_id AND rr.user_id=?
+        WHERE fr.comment_id=?
         ORDER BY fr.created_at ASC
     ");
+    $stmt->bind_param("ii",$user_id,$comment_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
     $replies = [];
     while ($r = $res->fetch_assoc()) $replies[] = $r;
     return $replies;
@@ -406,6 +442,7 @@ function renderReply(array $r, int $me, int $comment_id): string {
     $topReactions = array_slice($sortedReactions, 0, 3, true);
     
     $totalCount = array_sum(array_column($reactions, 'count'));
+    $mainIcon = $myReaction ? $reactions[$myReaction]['icon'] : 'fa-heart';
     $mainActive = $myReaction ? 'active' : '';
     $countText = $totalCount > 0 ? $totalCount : '';
     
@@ -417,8 +454,6 @@ function renderReply(array $r, int $me, int $comment_id): string {
                 $topReactionsHtml .= "<i class='fas {$data['icon']} top-reaction-icon' data-type='$type'></i>";
             }
         }
-    } else {
-        $topReactionsHtml = "<i class='fas fa-heart' style='color:var(--text3)'></i>";
     }
     
     $avatarHtml = '';

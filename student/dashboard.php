@@ -1,13 +1,9 @@
 <?php
 require_once '../config/database.php';
 require_once '../includes/notifications.php';
-require_once '../includes/update_points.php';
 requireLogin();
 
 $user_id = $_SESSION['user_id'];
-
-// Update user points based on recent activities
-updateUserPoints($conn, $user_id);
 
 $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);

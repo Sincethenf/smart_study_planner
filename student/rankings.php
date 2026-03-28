@@ -2,13 +2,9 @@
 // student/rankings.php
 require_once '../config/database.php';
 require_once '../includes/notifications.php';
-require_once '../includes/update_points.php';
 requireLogin();
 
 $user_id = $_SESSION['user_id'];
-
-// Update user points based on recent activities
-updateUserPoints($conn, $user_id);
 
 // Get user data
 $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
