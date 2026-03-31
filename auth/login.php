@@ -284,18 +284,60 @@ html, body {
   z-index: 1;
   animation: fadeUp .6s var(--ease) .25s both;
 }
+.headline-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
 .panel-headline h2 {
   font-family: 'Clash Display', 'Syne', sans-serif;
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.2;
   color: #fff;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 .panel-headline p {
   font-size: .9rem;
   color: rgba(255,255,255,.55);
   line-height: 1.65;
+}
+
+/* Mobile login button - hidden by default */
+.mobile-login-btn {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(255,255,255,.15);
+  border: 1.5px solid rgba(255,255,255,.25);
+  border-radius: 12px;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 600;
+  font-family: 'Cabinet Grotesk', sans-serif;
+  cursor: pointer;
+  transition: all .25s var(--ease);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mobile-login-btn:hover {
+  background: rgba(123,44,255,.4);
+  border-color: rgba(123,44,255,.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(123,44,255,.3);
+}
+.mobile-login-btn i {
+  font-size: .75rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
 }
 
 /* Feature list */
@@ -609,30 +651,328 @@ html, body {
 /* ════════════════════════════════════════════
    RESPONSIVE
 ════════════════════════════════════════════ */
+
+/* Large tablets and small desktops */
+@media (max-width: 1024px) {
+  .login-card {
+    max-width: 880px;
+  }
+  .panel-left {
+    padding: 44px 36px;
+  }
+  .panel-right {
+    padding: 44px 40px;
+  }
+  .panel-headline h2 {
+    font-size: 1.75rem;
+  }
+  /* Show mobile login button */
+  .mobile-login-btn {
+    display: flex;
+  }
+}
+
+/* Tablets */
 @media (max-width: 820px) {
   html, body { overflow-y: auto; }
-  .page-wrap { align-items: flex-start; padding: 16px; }
+  .page-wrap { 
+    align-items: flex-start; 
+    padding: 20px 16px;
+    min-height: 100vh;
+  }
   .login-card {
     grid-template-columns: 1fr;
-    max-width: 480px;
+    max-width: 520px;
     margin: 0 auto;
     border-radius: 22px;
     min-height: unset;
   }
   .panel-left {
-    padding: 36px 32px;
+    padding: 40px 36px;
     gap: 28px;
   }
-  .stats-strip { display: none; }
-  .panel-headline h2 { font-size: 1.6rem; }
-  .panel-right { padding: 36px 32px; }
+  .panel-headline h2 { 
+    font-size: 1.65rem; 
+  }
+  .panel-headline p {
+    font-size: .85rem;
+  }
+  .feature-list {
+    gap: 12px;
+  }
+  .feature-row {
+    padding: 12px 14px;
+  }
+  .stats-strip { 
+    display: grid;
+    gap: 8px;
+  }
+  .stat-cell {
+    padding: 10px 8px;
+  }
+  .stat-num {
+    font-size: 1rem;
+  }
+  .panel-right { 
+    padding: 40px 36px; 
+  }
+  .form-head h2 {
+    font-size: 1.7rem;
+  }
 }
 
+/* Mobile landscape and small tablets */
+@media (max-width: 640px) {
+  .page-wrap {
+    padding: 16px 12px;
+  }
+  .login-card {
+    max-width: 100%;
+    border-radius: 18px;
+  }
+  .panel-left {
+    padding: 32px 28px;
+  }
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    font-size: .9rem;
+  }
+  .brand-name {
+    font-size: .9rem;
+  }
+  .panel-headline h2 {
+    font-size: 1.5rem;
+  }
+  .panel-headline p {
+    font-size: .8rem;
+  }
+  .feature-row {
+    padding: 11px 13px;
+    gap: 11px;
+  }
+  .feat-icon {
+    width: 34px;
+    height: 34px;
+    font-size: .82rem;
+  }
+  .feat-title {
+    font-size: .82rem;
+  }
+  .feat-sub {
+    font-size: .72rem;
+  }
+  .stats-strip {
+    gap: 6px;
+  }
+  .stat-cell {
+    padding: 9px 6px;
+  }
+  .stat-num {
+    font-size: .95rem;
+  }
+  .stat-label {
+    font-size: .6rem;
+  }
+  .panel-right {
+    padding: 32px 28px;
+  }
+  .form-head h2 {
+    font-size: 1.6rem;
+  }
+  .form-head p {
+    font-size: .82rem;
+  }
+  .form-control {
+    padding: 12px 14px 12px 40px;
+    font-size: .875rem;
+  }
+  .btn-primary {
+    padding: 13px;
+    font-size: .9rem;
+  }
+}
+
+/* Mobile portrait */
 @media (max-width: 480px) {
-  .panel-left  { padding: 28px 22px; }
-  .panel-right { padding: 28px 22px; }
-  .form-head h2 { font-size: 1.5rem; }
-  .feature-list { gap: 10px; }
+  .page-wrap {
+    padding: 12px 8px;
+  }
+  .login-card {
+    border-radius: 16px;
+  }
+  .panel-left {
+    padding: 28px 24px;
+    gap: 24px;
+  }
+  .brand {
+    gap: 10px;
+  }
+  .brand-icon {
+    width: 34px;
+    height: 34px;
+    font-size: .85rem;
+  }
+  .brand-name {
+    font-size: .85rem;
+  }
+  .panel-headline h2 {
+    font-size: 1.35rem;
+    margin-bottom: 10px;
+  }
+  .panel-headline p {
+    font-size: .78rem;
+  }
+  .feature-list {
+    gap: 10px;
+  }
+  .feature-row {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .feat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: .78rem;
+  }
+  .feat-title {
+    font-size: .78rem;
+  }
+  .feat-sub {
+    font-size: .7rem;
+  }
+  .stats-strip {
+    gap: 6px;
+  }
+  .stat-cell {
+    padding: 8px 6px;
+  }
+  .stat-num {
+    font-size: .9rem;
+  }
+  .stat-label {
+    font-size: .58rem;
+  }
+  .panel-right {
+    padding: 28px 24px;
+  }
+  .form-eyebrow {
+    font-size: .68rem;
+    padding: 3px 9px;
+  }
+  .form-head h2 {
+    font-size: 1.45rem;
+  }
+  .form-head p {
+    font-size: .8rem;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    font-size: .78rem;
+    margin-bottom: 7px;
+  }
+  .form-control {
+    padding: 11px 13px 11px 38px;
+    font-size: .85rem;
+  }
+  .input-icon {
+    left: 13px;
+    font-size: .8rem;
+  }
+  .pw-toggle {
+    right: 11px;
+    font-size: .8rem;
+  }
+  .btn-primary {
+    padding: 12px;
+    font-size: .875rem;
+    gap: 8px;
+  }
+  .or-divider {
+    margin: 18px 0;
+    font-size: .75rem;
+  }
+  .form-footer {
+    font-size: .82rem;
+    margin-top: 16px;
+  }
+  .alert {
+    padding: 11px 14px;
+    font-size: .82rem;
+  }
+}
+
+/* Extra small mobile */
+@media (max-width: 360px) {
+  .page-wrap {
+    padding: 10px 6px;
+  }
+  .login-card {
+    border-radius: 14px;
+  }
+  .panel-left {
+    padding: 24px 20px;
+    gap: 20px;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    font-size: .8rem;
+  }
+  .brand-name {
+    font-size: .8rem;
+  }
+  .panel-headline h2 {
+    font-size: 1.2rem;
+  }
+  .panel-headline p {
+    font-size: .75rem;
+  }
+  .feature-row {
+    padding: 9px 11px;
+  }
+  .feat-icon {
+    width: 30px;
+    height: 30px;
+    font-size: .75rem;
+  }
+  .feat-title {
+    font-size: .75rem;
+  }
+  .feat-sub {
+    font-size: .68rem;
+  }
+  .stats-strip {
+    gap: 5px;
+  }
+  .stat-cell {
+    padding: 7px 5px;
+  }
+  .stat-num {
+    font-size: .85rem;
+  }
+  .stat-label {
+    font-size: .55rem;
+  }
+  .panel-right {
+    padding: 24px 20px;
+  }
+  .form-head h2 {
+    font-size: 1.3rem;
+  }
+  .form-head p {
+    font-size: .78rem;
+  }
+  .form-control {
+    padding: 10px 12px 10px 36px;
+    font-size: .82rem;
+  }
+  .btn-primary {
+    padding: 11px;
+    font-size: .85rem;
+  }
 }
 </style>
 </head>
@@ -662,7 +1002,13 @@ html, body {
 
       <!-- Headline -->
       <div class="panel-headline">
-        <h2>Your Smart<br>Learning<br>Companion</h2>
+        <div class="headline-row">
+          <h2>Your Smart<br>Learning<br>Companion</h2>
+          <button class="mobile-login-btn" onclick="scrollToLogin()" aria-label="Scroll to login form">
+            <i class="fas fa-arrow-down"></i>
+            Login
+          </button>
+        </div>
         <p>Everything you need to learn faster,<br>track progress, and level up.</p>
       </div>
 
@@ -799,6 +1145,13 @@ function togglePw() {
   const showing = input.type === 'text';
   input.type    = showing ? 'password' : 'text';
   icon.className = showing ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+
+function scrollToLogin() {
+  const loginForm = document.querySelector('.panel-right');
+  if (loginForm) {
+    loginForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 </script>
 </body>
