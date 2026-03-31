@@ -150,7 +150,8 @@ $unread_notifications = getUnreadNotificationCount($conn, $user_id);
   --radius:14px;--radius-sm:9px;
   --ease:cubic-bezier(.4,0,.2,1);
 }
-html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6;width:100%;max-width:100vw}
+body{position:relative}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
@@ -158,7 +159,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 /* ═══════════════════════════════════════════════
    SHELL + SIDEBAR
 ═══════════════════════════════════════════════ */
-.shell{display:flex;min-height:100vh}
+.shell{display:flex;min-height:100vh;width:100%;max-width:100vw;overflow-x:hidden}
 .sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:200;transition:transform .3s var(--ease)}
 .sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px}
 .logo-text{font-size:.76rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.25}
@@ -180,8 +181,8 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 /* ═══════════════════════════════════════════════
    MAIN + TOPBAR
 ═══════════════════════════════════════════════ */
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{height:var(--topbar-h);display:flex;align-items:center;padding:0 28px;gap:14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;width:100%;max-width:100%;overflow-x:hidden}
+.topbar{height:var(--topbar-h);display:flex;align-items:center;padding:0 28px;gap:14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;width:100%;max-width:100%}
 .hamburger{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);width:36px;height:36px;place-items:center;color:var(--text2);cursor:pointer;font-size:.95rem}
 .topbar-title{font-size:1.05rem;font-weight:700;letter-spacing:-.02em}
 .topbar-sub{font-size:.72rem;color:var(--text3)}
@@ -198,20 +199,24 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 /* ═══════════════════════════════════════════════
    PAGE
 ═══════════════════════════════════════════════ */
-.page{flex:1;padding:26px 28px;display:flex;flex-direction:column;gap:22px}
+.page{flex:1;padding:26px 28px;display:flex;flex-direction:column;gap:22px;width:100%;max-width:100%;overflow-x:hidden}
 
 /* Page header */
-.page-header{display:flex;align-items:center;justify-content:space-between;animation:slideUp .4s var(--ease) both}
+.page-header{display:flex;align-items:center;justify-content:space-between;animation:slideUp .4s var(--ease) both;flex-wrap:wrap;gap:10px;width:100%;max-width:100%}
 .page-header-left{display:flex;align-items:center;gap:14px}
 .page-icon{width:46px;height:46px;border-radius:12px;background:var(--violet-dim);display:grid;place-items:center;font-size:1.2rem;color:var(--violet);flex-shrink:0;box-shadow:0 0 20px rgba(139,92,246,.2)}
 .page-title{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
 .page-sub{font-size:.78rem;color:var(--text3);margin-top:1px}
+.notes-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:20px;background:var(--cyan-dim);color:var(--cyan);font-size:.82rem;font-weight:700;border:1px solid rgba(6,182,212,.2);cursor:pointer;transition:all .18s var(--ease);font-family:'Outfit',sans-serif}
+.notes-btn:hover{background:var(--cyan);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,.3)}
+.notes-btn i{font-size:.85rem}
 .gen-count-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:20px;background:var(--violet-dim);color:var(--violet);font-size:.72rem;font-weight:700;font-family:'JetBrains Mono',monospace;border:1px solid rgba(139,92,246,.18)}
 
 /* ═══════════════════════════════════════════════
    TWO COLUMN LAYOUT
 ═══════════════════════════════════════════════ */
-.gen-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+.gen-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;width:100%;max-width:100%;box-sizing:border-box;overflow-x:hidden}
+.gen-layout > *{min-width:0;max-width:100%;box-sizing:border-box}
 
 /* ═══════════════════════════════════════════════
    PROMPT CARD
@@ -221,6 +226,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   border-radius:var(--radius);padding:26px 28px;
   animation:slideUp .4s var(--ease) .05s both;
   position:relative;overflow:hidden;
+  max-width:100%;box-sizing:border-box;width:100%;
 }
 .prompt-card::before{
   content:'';position:absolute;top:-60px;right:-60px;
@@ -233,13 +239,14 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .prompt-card-sub{font-size:.78rem;color:var(--text3);margin-bottom:20px}
 
 /* Input row */
-.input-row{display:flex;gap:10px;margin-bottom:16px}
+.input-row{display:flex;gap:10px;margin-bottom:16px;width:100%;max-width:100%}
 .prompt-input{
   flex:1;padding:12px 16px;
   background:var(--bg3);border:1.5px solid var(--border);
   border-radius:var(--radius-sm);
   font-family:'Outfit',sans-serif;font-size:.9rem;color:var(--text);
   outline:none;transition:border-color .18s var(--ease),box-shadow .18s var(--ease);
+  width:100%;max-width:100%;
 }
 .prompt-input::placeholder{color:rgba(136,146,170,.4)}
 .prompt-input:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,92,246,.12)}
@@ -257,9 +264,9 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 .gen-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* Example tags */
-.examples-row{margin-top:4px}
+.examples-row{margin-top:4px;width:100%;max-width:100%;overflow-x:hidden}
 .examples-label{font-size:.72rem;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.tags-wrap{display:flex;flex-wrap:wrap;gap:8px}
+.tags-wrap{display:flex;flex-wrap:wrap;gap:8px;width:100%;max-width:100%}
 .topic-tag{
   display:inline-flex;align-items:center;gap:6px;
   padding:6px 13px;border-radius:20px;
@@ -286,6 +293,7 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);overflow:hidden;
   animation:slideUp .4s var(--ease) both;
+  width:100%;max-width:100%;
 }
 .result-head{
   display:flex;align-items:center;justify-content:space-between;
@@ -326,6 +334,8 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   word-break:break-word;
   max-height:480px;
   overflow-y:auto;
+  overflow-x:hidden;
+  width:100%;
 }
 /* Highlight section headers inside content */
 .result-content .sec-head{color:var(--violet);font-weight:600}
@@ -421,18 +431,254 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 /* ═══════════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════════ */
-@media(max-width:1100px){.gen-layout{grid-template-columns:1fr}}
+
+/* Large tablets and small desktops */
+@media(max-width:1280px){
+  .gen-layout{grid-template-columns:1fr 280px;gap:18px;padding:0 10px}
+  .page{padding:24px}
+}
+
+/* Tablets */
+@media(max-width:1100px){
+  .gen-layout{grid-template-columns:1fr;gap:16px;padding:0 8px}
+  .gen-layout > div{width:100%;max-width:100%;box-sizing:border-box}
+  .gen-layout > div:last-child{position:static !important;max-width:100%}
+  .page{padding:20px 18px}
+}
+
+/* Mobile Landscape */
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
+  .gen-layout{gap:14px;padding:0 6px}
+  .prompt-card{padding:18px 20px}
+}
+
+/* Mobile Portrait */
+@media(max-width:480px){
+  .gen-layout{gap:12px;padding:0 4px}
+  .prompt-card{padding:14px 16px}
+}
+
+/* Extra Small Mobile */
+@media(max-width:360px){
+  .gen-layout{gap:10px;padding:0 2px}
+  .prompt-card{padding:12px 14px}
+}
+
+/* Mobile and tablets */
+@media(max-width:768px){
+  /* Sidebar */
+  .sidebar{transform:translateX(-100%);width:var(--sidebar-w);max-width:80vw}
   .sidebar.open{transform:translateX(0)}
   .overlay.open{display:block}
-  .main{margin-left:0}
+  .main{margin-left:0;width:100vw;max-width:100vw}
   .hamburger{display:grid}
-  .page{padding:16px 14px}
-  .topbar{padding:0 14px}
-  .input-row{flex-direction:column}
-  .gen-btn{width:100%;justify-content:center}
-  .gen-layout > div:last-child{position:static !important}
+  
+  /* Page layout */
+  .page{padding:16px;gap:16px;width:100%;max-width:100vw;box-sizing:border-box}
+  
+  /* Topbar */
+  .topbar{padding:0 16px;height:60px;width:100%;max-width:100vw;box-sizing:border-box}
+  .topbar-title{font-size:.95rem}
+  .topbar-sub{font-size:.7rem}
+  .topbar-right{gap:8px}
+  .icon-btn{width:34px;height:34px;font-size:.85rem}
+  .user-pill{padding:4px 12px 4px 5px;gap:7px}
+  .pill-avatar{width:26px;height:26px;font-size:.7rem}
+  .pill-name{font-size:.78rem}
+  
+  /* Page header */
+  .page-header{flex-wrap:wrap;gap:10px;width:100%;max-width:100%}
+  .page-header-left{flex:1;min-width:200px}
+  .page-icon{width:40px;height:40px;font-size:1rem}
+  .page-title{font-size:1.1rem}
+  .page-sub{font-size:.75rem}
+  .notes-btn{font-size:.75rem;padding:6px 12px}
+  .gen-count-chip{font-size:.7rem;padding:5px 11px}
+  
+  /* Prompt card */
+  .prompt-card{padding:20px;width:100%;max-width:100%;box-sizing:border-box}
+  .prompt-card-title{font-size:.9rem}
+  .prompt-card-sub{font-size:.75rem;margin-bottom:16px}
+  
+  /* Input */
+  .input-row{flex-direction:column;gap:10px;width:100%;max-width:100%}
+  .prompt-input{font-size:.875rem;padding:11px 14px;width:100%;max-width:100%;box-sizing:border-box}
+  .gen-btn{width:100%;justify-content:center;font-size:.875rem;max-width:100%;box-sizing:border-box}
+  
+  /* Tags */
+  .examples-label{font-size:.7rem}
+  .tags-wrap{gap:6px;width:100%;max-width:100%}
+  .topic-tag{font-size:.75rem;padding:5px 11px;white-space:nowrap}
+  
+  /* Result card */
+  .result-head{padding:16px;flex-wrap:wrap;gap:10px;width:100%;max-width:100%}
+  .result-title{font-size:.875rem;width:100%;max-width:100%;word-break:break-word}
+  .result-actions{width:100%;justify-content:flex-start;gap:8px;max-width:100%}
+  .btn-copy,.btn-fav{font-size:.75rem;padding:6px 12px}
+  .result-content{padding:18px;font-size:.8rem;line-height:1.75;max-height:400px;width:100%;max-width:100%;box-sizing:border-box}
+  
+  /* History & Tips */
+  .history-card,.tips-card{margin-bottom:0}
+  .history-list{max-height:200px}
+}
+
+/* Mobile portrait */
+@media(max-width:480px){
+  /* Page layout */
+  .page{padding:12px;gap:14px;width:100%;max-width:100vw;box-sizing:border-box}
+  
+  /* Topbar */
+  .topbar{padding:0 12px;height:56px;width:100%;max-width:100vw;box-sizing:border-box}
+  .topbar-title{font-size:.9rem}
+  .topbar-sub{display:none}
+  .topbar-right{gap:6px}
+  .icon-btn{width:32px;height:32px;font-size:.82rem}
+  .notif-pip{width:14px;height:14px;font-size:.6rem;top:6px;right:6px}
+  .user-pill{padding:3px 10px 3px 4px;gap:6px}
+  .pill-avatar{width:24px;height:24px;font-size:.68rem}
+  .pill-name{font-size:.75rem}
+  
+  /* Page header */
+  .page-header{flex-direction:column;align-items:flex-start;gap:10px;width:100%;max-width:100%}
+  .page-header-left{width:100%;gap:10px;max-width:100%}
+  .page-icon{width:36px;height:36px;font-size:.95rem;border-radius:10px}
+  .page-title{font-size:1rem}
+  .page-sub{font-size:.72rem}
+  .notes-btn{font-size:.72rem;padding:5px 10px;gap:5px}
+  .notes-btn i{font-size:.75rem}
+  .gen-count-chip{font-size:.68rem;padding:4px 10px;gap:5px}
+  
+  /* Prompt card */
+  .prompt-card{padding:16px;border-radius:12px;width:100%;max-width:100%;box-sizing:border-box}
+  .prompt-card::before{width:180px;height:180px;top:-40px;right:-40px}
+  .prompt-card-title{font-size:.85rem;gap:6px}
+  .prompt-card-title i{font-size:.85rem}
+  .prompt-card-sub{font-size:.72rem;margin-bottom:14px}
+  
+  /* Input */
+  .input-row{gap:8px;width:100%;max-width:100%}
+  .prompt-input{font-size:.85rem;padding:10px 13px;border-radius:8px;width:100%;max-width:100%;box-sizing:border-box}
+  .gen-btn{padding:10px 18px;font-size:.85rem;gap:6px;border-radius:8px;width:100%;max-width:100%;box-sizing:border-box}
+  .gen-btn i{font-size:.85rem}
+  
+  /* Examples */
+  .examples-row{margin-top:0;width:100%;max-width:100%;overflow-x:hidden}
+  .examples-label{font-size:.68rem;margin-bottom:8px;gap:5px}
+  .examples-label i{font-size:.68rem}
+  .tags-wrap{gap:5px;width:100%;max-width:100%}
+  .topic-tag{font-size:.7rem;padding:5px 9px;gap:4px;border-radius:16px;white-space:nowrap}
+  .topic-tag i{font-size:.68rem}
+  
+  /* Alerts */
+  .alert{padding:10px 14px;font-size:.8rem;border-radius:8px;gap:8px}
+  .alert i{font-size:.82rem}
+  
+  /* Result card */
+  .result-card{border-radius:12px;width:100%;max-width:100%}
+  .result-head{padding:14px;gap:10px;width:100%;max-width:100%}
+  .result-title{font-size:.82rem;gap:6px;width:100%;max-width:100%;word-break:break-word}
+  .result-title i{font-size:.82rem}
+  .result-topic{font-size:.82rem;word-break:break-word}
+  .result-actions{gap:6px;width:100%;max-width:100%}
+  .btn-copy,.btn-fav{font-size:.72rem;padding:6px 11px;gap:5px;border-radius:8px}
+  .btn-copy i,.btn-fav i{font-size:.72rem}
+  .result-content{padding:14px;font-size:.75rem;line-height:1.7;max-height:350px;width:100%;max-width:100%;box-sizing:border-box}
+  
+  /* History */
+  .history-card{border-radius:12px}
+  .history-head{padding:14px}
+  .history-title{font-size:.82rem}
+  .history-count{font-size:.68rem;padding:2px 7px}
+  .history-list{max-height:180px}
+  .history-item{padding:10px 14px;gap:8px}
+  .history-icon{width:28px;height:28px;font-size:.72rem;border-radius:7px}
+  .history-item-title{font-size:.78rem}
+  .history-item-date{font-size:.66rem}
+  .history-empty{padding:24px;font-size:.78rem}
+  .history-empty i{font-size:1.3rem !important;margin-bottom:6px}
+  
+  /* Tips */
+  .tips-card{padding:14px;border-radius:12px}
+  .tips-title{font-size:.78rem;margin-bottom:8px;gap:6px}
+  .tips-title i{font-size:.78rem}
+  .tip-item{font-size:.73rem;margin-bottom:7px;gap:7px;line-height:1.5}
+  .tip-dot{width:4px;height:4px;margin-top:6px}
+}
+
+/* Extra small mobile */
+@media(max-width:360px){
+  /* Page layout */
+  .page{padding:10px;gap:12px;width:100%;max-width:100vw;box-sizing:border-box}
+  
+  /* Topbar */
+  .topbar{padding:0 10px;height:54px;width:100%;max-width:100vw;box-sizing:border-box}
+  .hamburger{width:32px;height:32px;font-size:.85rem;border-radius:8px}
+  .topbar-title{font-size:.85rem}
+  .icon-btn{width:30px;height:30px;font-size:.8rem;border-radius:8px}
+  .user-pill{padding:3px 8px 3px 3px;gap:5px;border-radius:20px}
+  .pill-avatar{width:22px;height:22px;font-size:.65rem}
+  .pill-name{font-size:.72rem}
+  
+  /* Page header */
+  .page-header{gap:8px}
+  .page-header-left{gap:8px}
+  .page-icon{width:34px;height:34px;font-size:.9rem;border-radius:9px}
+  .page-title{font-size:.95rem}
+  .page-sub{font-size:.7rem}
+  .notes-btn{font-size:.7rem;padding:4px 9px;gap:4px;border-radius:16px}
+  .notes-btn i{font-size:.72rem}
+  .gen-count-chip{font-size:.65rem;padding:3px 9px;gap:4px;border-radius:16px}
+  
+  /* Prompt card */
+  .prompt-card{padding:14px;border-radius:10px;width:100%;max-width:100%;box-sizing:border-box}
+  .prompt-card::before{width:150px;height:150px;top:-30px;right:-30px}
+  .prompt-card-title{font-size:.82rem;gap:5px}
+  .prompt-card-title i{font-size:.82rem}
+  .prompt-card-sub{font-size:.7rem;margin-bottom:12px}
+  
+  /* Input */
+  .input-row{gap:8px;width:100%;max-width:100%}
+  .prompt-input{font-size:.82rem;padding:9px 12px;border-radius:8px;width:100%;max-width:100%;box-sizing:border-box}
+  .gen-btn{padding:9px 16px;font-size:.82rem;gap:5px;border-radius:8px;width:100%;max-width:100%;box-sizing:border-box}
+  
+  /* Examples */
+  .examples-label{font-size:.66rem;margin-bottom:7px}
+  .tags-wrap{gap:5px;width:100%;max-width:100%}
+  .topic-tag{font-size:.68rem;padding:4px 8px;gap:4px;border-radius:14px;white-space:nowrap}
+  .topic-tag i{font-size:.66rem}
+  
+  /* Alerts */
+  .alert{padding:9px 12px;font-size:.78rem;gap:7px;border-radius:8px}
+  .alert i{font-size:.8rem}
+  
+  /* Result card */
+  .result-card{border-radius:10px;width:100%;max-width:100%}
+  .result-head{padding:12px;gap:8px;width:100%;max-width:100%}
+  .result-title{font-size:.8rem;gap:5px;width:100%;max-width:100%;word-break:break-word}
+  .result-title i{font-size:.8rem}
+  .result-actions{gap:5px;width:100%;max-width:100%}
+  .btn-copy,.btn-fav{font-size:.7rem;padding:5px 10px;gap:4px;border-radius:7px}
+  .result-content{padding:12px;font-size:.72rem;line-height:1.65;max-height:320px;width:100%;max-width:100%;box-sizing:border-box}
+  
+  /* History */
+  .history-card{border-radius:10px}
+  .history-head{padding:12px}
+  .history-title{font-size:.8rem}
+  .history-count{font-size:.65rem;padding:1px 6px}
+  .history-list{max-height:160px}
+  .history-item{padding:9px 12px;gap:7px}
+  .history-icon{width:26px;height:26px;font-size:.7rem;border-radius:6px}
+  .history-item-title{font-size:.75rem}
+  .history-item-date{font-size:.64rem}
+  .history-empty{padding:20px;font-size:.75rem}
+  .history-empty i{font-size:1.2rem !important;margin-bottom:5px}
+  
+  /* Tips */
+  .tips-card{padding:12px;border-radius:10px}
+  .tips-title{font-size:.75rem;margin-bottom:7px;gap:5px}
+  .tips-title i{font-size:.75rem}
+  .tip-item{font-size:.7rem;margin-bottom:6px;gap:6px;line-height:1.45}
+  .tip-dot{width:3px;height:3px;margin-top:5px}
 }
 </style>
 </head>
@@ -520,6 +766,9 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
           <div class="page-sub">Instant study materials for any topic</div>
         </div>
       </div>
+      <button class="notes-btn" onclick="openNotesModal()">
+        <i class="fas fa-note-sticky"></i> Notes
+      </button>
       <span class="gen-count-chip"><i class="fas fa-bolt-lightning"></i> <?php echo $totalGen; ?> generated</span>
     </div>
 
@@ -727,6 +976,361 @@ overlay.addEventListener('click', () => {
   sidebar.classList.remove('open');
   overlay.classList.remove('open');
 });
+</script>
+
+
+<!-- Notes Modal -->
+<div id="notesModal" class="notes-modal" style="display:none">
+  <div class="notes-modal-overlay" onclick="closeNotesModal()"></div>
+  <div class="notes-modal-content">
+    <div class="notes-modal-header">
+      <h3><i class="fas fa-note-sticky"></i> Paste Your Notes</h3>
+      <button class="notes-modal-close" onclick="closeNotesModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="notes-modal-body">
+      <textarea id="notesInput" placeholder="Paste your notes here..." rows="12"></textarea>
+    </div>
+    <div class="notes-modal-footer">
+      <button class="notes-cancel-btn" onclick="closeNotesModal()">Cancel</button>
+      <button class="notes-submit-btn" onclick="processNotes()">Process Notes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Options Modal -->
+<div id="optionsModal" class="notes-modal" style="display:none">
+  <div class="notes-modal-overlay" onclick="closeOptionsModal()"></div>
+  <div class="notes-modal-content options-modal-content">
+    <div class="notes-modal-header">
+      <h3><i class="fas fa-wand-magic-sparkles"></i> Choose Processing Option</h3>
+      <button class="notes-modal-close" onclick="closeOptionsModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="notes-modal-body">
+      <div class="options-grid">
+        <button class="option-card" onclick="selectOption('quiz')">
+          <i class="fas fa-list-check"></i>
+          <h4>Multiple Choice</h4>
+          <p>Generate quiz questions from your notes</p>
+        </button>
+        <button class="option-card" onclick="selectOption('essay')">
+          <i class="fas fa-pen-to-square"></i>
+          <h4>Essay</h4>
+          <p>Create essay questions for deeper understanding</p>
+        </button>
+        <button class="option-card" onclick="selectOption('summarize')">
+          <i class="fas fa-file-lines"></i>
+          <h4>Summarize</h4>
+          <p>Get a concise summary of your notes</p>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.notes-modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;display:flex;align-items:center;justify-content:center}
+.notes-modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px)}
+.notes-modal-content{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:90%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:modalSlideUp 0.3s ease;max-height:90vh;display:flex;flex-direction:column;color:var(--text)}
+.options-modal-content{max-width:700px}
+@keyframes modalSlideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.notes-modal-header{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+.notes-modal-header h3{margin:0;font-size:1.25rem;color:var(--text);display:flex;align-items:center;gap:10px}
+.notes-modal-header i{color:var(--cyan)}
+.notes-modal-close{background:none;border:none;font-size:1.5rem;color:var(--text3);cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:all 0.2s}
+.notes-modal-close:hover{background:#f3f4f6;color:#1f2937}
+.notes-modal-body{padding:24px 28px;flex:1;overflow-y:auto}
+#notesInput{width:100%;border:2px solid #e5e7eb;border-radius:12px;padding:16px;font-size:0.95rem;font-family:'Outfit',sans-serif;resize:vertical;min-height:200px;transition:border-color 0.2s;box-sizing:border-box}
+#notesInput:focus{outline:none;border-color:var(--cyan)}
+.notes-modal-footer{padding:20px 28px;border-top:1px solid #e5e7eb;display:flex;gap:12px;justify-content:flex-end}
+.notes-cancel-btn,.notes-submit-btn{padding:10px 24px;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Outfit',sans-serif;border:none}
+.notes-cancel-btn{background:#f3f4f6;color:#6b7280}
+.notes-cancel-btn:hover{background:#e5e7eb;color:#374151}
+.notes-submit-btn{background:var(--cyan);color:#fff}
+.notes-submit-btn:hover{background:#0891b2;transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,0.3)}
+.options-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.option-card{background:#fff;border:2px solid #e5e7eb;border-radius:12px;padding:24px 20px;text-align:center;cursor:pointer;transition:all 0.3s;display:flex;flex-direction:column;align-items:center;gap:12px}
+.option-card:hover{border-color:var(--cyan);background:var(--cyan-dim);transform:translateY(-4px);box-shadow:0 8px 20px rgba(6,182,212,0.2)}
+.option-card i{font-size:2.5rem;color:var(--cyan)}
+.option-card h4{margin:0;font-size:1.1rem;color:#1f2937;font-weight:700}
+.option-card p{margin:0;font-size:0.85rem;color:#6b7280;line-height:1.4}
+.quiz-container,.essay-container,.summary-container{padding:10px 0}
+.quiz-question,.essay-question{background:#f9fafb;border-radius:10px;padding:20px;margin-bottom:16px;border-left:4px solid transparent;transition:all 0.3s}
+.quiz-question h4,.essay-question h4{margin:0 0 16px 0;color:#1f2937;font-size:1rem;line-height:1.6}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-option{display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all 0.2s}
+.quiz-option:hover{border-color:var(--cyan);background:var(--cyan-dim)}
+.quiz-option input{cursor:pointer}
+.quiz-option span{flex:1;color:#374151;font-size:0.9rem}
+.quiz-answer{margin-top:12px;padding:10px;background:#fef3c7;border-radius:6px;color:#92400e;font-weight:600;font-size:0.85rem}
+.essay-points{color:#6b7280;font-size:0.85rem;margin:8px 0 0 0;line-height:1.5}
+.summary-container p{color:#374151;line-height:1.8;font-size:0.95rem;margin:0}
+@media(max-width:768px){
+  .notes-modal-content{width:95%;max-width:none}
+  .notes-modal-header,.notes-modal-body,.notes-modal-footer{padding:18px 20px}
+  .notes-modal-header h3{font-size:1.1rem}
+  #notesInput{min-height:180px;font-size:0.9rem}
+  .options-grid{grid-template-columns:1fr;gap:12px}
+  .option-card{padding:20px 18px}
+  .option-card i{font-size:2rem}
+}
+@media(max-width:480px){
+  .notes-modal-header,.notes-modal-body,.notes-modal-footer{padding:16px 18px}
+  .notes-modal-header h3{font-size:1rem}
+  #notesInput{min-height:160px;font-size:0.85rem;padding:12px}
+  .notes-cancel-btn,.notes-submit-btn{padding:8px 18px;font-size:0.85rem}
+  .option-card{padding:18px 16px}
+  .option-card i{font-size:1.8rem}
+  .option-card h4{font-size:1rem}
+  .option-card p{font-size:0.8rem}
+}
+</style>
+
+<script>
+let storedNotes = '';
+
+function openNotesModal() {
+  document.getElementById('notesModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeNotesModal() {
+  document.getElementById('notesModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function processNotes() {
+  const notes = document.getElementById('notesInput').value.trim();
+  if (!notes) {
+    alert('Please paste your notes first');
+    return;
+  }
+  storedNotes = notes;
+  closeNotesModal();
+  document.getElementById('optionsModal').style.display = 'flex';
+}
+
+function closeOptionsModal() {
+  document.getElementById('optionsModal').style.display = 'none';
+  document.body.style.overflow = '';
+  // Don't clear storedNotes here - it will be cleared after sending
+}
+
+function selectOption(type) {
+  console.log('Selected option:', type);
+  console.log('Stored notes:', storedNotes);
+  console.log('Stored notes length:', storedNotes.length);
+  
+  if (!storedNotes) {
+    alert('Notes not found. Please try again.');
+    return;
+  }
+  
+  // Test alert to verify data before sending
+  console.log('About to send - Type:', type, 'Notes length:', storedNotes.length);
+  
+  // Verify fetch URL
+  const fetchUrl = 'test_api.php';
+  console.log('Fetch URL:', fetchUrl);
+  console.log('Current page:', window.location.href);
+  
+  closeOptionsModal();
+  
+  // Show loading
+  const loadingHtml = `
+    <div class="notes-modal" style="display:flex">
+      <div class="notes-modal-overlay"></div>
+      <div class="notes-modal-content" style="max-width:400px">
+        <div class="notes-modal-body" style="text-align:center;padding:40px">
+          <i class="fas fa-spinner fa-spin" style="font-size:3rem;color:var(--cyan);margin-bottom:20px"></i>
+          <h3 style="margin:0;color:#1f2937">Generating...</h3>
+          <p style="color:#6b7280;margin-top:10px">Please wait while AI processes your notes</p>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', loadingHtml);
+  
+  // Create form data
+  const formData = 'notes=' + encodeURIComponent(storedNotes) + '&type=' + encodeURIComponent(type);
+  console.log('Sending data length:', formData.length);
+  console.log('First 100 chars:', formData.substring(0, 100));
+  
+  // Send to backend
+  fetch('process_notes_ai.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: formData
+  })
+  .then(res => {
+    console.log('Response status:', res.status);
+    return res.text();
+  })
+  .then(text => {
+    console.log('Raw response:', text);
+    return JSON.parse(text);
+  })
+  .then(data => {
+    document.querySelector('.notes-modal:last-child').remove();
+    
+    console.log('Response:', data);
+    
+    if (data.success) {
+      if (type === 'quiz') {
+        displayQuiz(data.data);
+      } else if (type === 'essay') {
+        displayEssay(data.data);
+      } else if (type === 'summarize') {
+        displaySummary(data.data);
+      }
+    } else {
+      alert('Error: ' + data.message);
+    }
+    
+    document.getElementById('notesInput').value = '';
+    storedNotes = '';
+  })
+  .catch(err => {
+    console.error('Fetch error:', err);
+    document.querySelector('.notes-modal:last-child').remove();
+    alert('Error processing notes. Please try again.');
+    console.error('Full error:', err);
+  });
+}
+
+function displayQuiz(questions) {
+  window.currentQuiz = questions; // Store for saving
+  let html = '<div class="quiz-container">';
+  questions.forEach((q, i) => {
+    html += `
+      <div class="quiz-question">
+        <h4>${i + 1}. ${q.question}</h4>
+        <div class="quiz-options">
+          ${Object.entries(q.options).map(([key, val]) => `
+            <label class="quiz-option">
+              <input type="radio" name="q${i}" value="${key}">
+              <span>${key}. ${val}</span>
+            </label>
+          `).join('')}
+        </div>
+        <div class="quiz-answer" style="display:none">Correct Answer: ${q.correct}</div>
+      </div>
+    `;
+  });
+  html += `
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="notes-submit-btn" onclick="checkQuizAnswers()">Check Answers</button>
+      <button class="notes-cancel-btn" onclick="saveQuizToFavorites()" style="background:var(--cyan);color:#fff">
+        <i class="fas fa-heart"></i> Save to Favorites
+      </button>
+    </div>
+  </div>`;
+  
+  showResultModal('Multiple Choice Quiz', html);
+}
+
+function displayEssay(questions) {
+  let html = '<div class="essay-container">';
+  questions.forEach((q, i) => {
+    html += `
+      <div class="essay-question">
+        <h4>${i + 1}. ${q.question}</h4>
+        ${q.points ? `<p class="essay-points">${q.points}</p>` : ''}
+      </div>
+    `;
+  });
+  html += '</div>';
+  
+  showResultModal('Essay Questions', html);
+}
+
+function displaySummary(summary) {
+  const html = `<div class="summary-container"><p>${summary.replace(/\n/g, '<br>')}</p></div>`;
+  showResultModal('Summary', html);
+}
+
+function showResultModal(title, content) {
+  const modal = `
+    <div class="notes-modal" style="display:flex">
+      <div class="notes-modal-overlay" onclick="this.parentElement.remove()"></div>
+      <div class="notes-modal-content" style="max-width:800px">
+        <div class="notes-modal-header">
+          <h3><i class="fas fa-check-circle"></i> ${title}</h3>
+          <button class="notes-modal-close" onclick="this.closest('.notes-modal').remove()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="notes-modal-body" style="max-height:60vh;overflow-y:auto">
+          ${content}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modal);
+}
+
+function checkQuizAnswers() {
+  const questions = document.querySelectorAll('.quiz-question');
+  let score = 0;
+  
+  questions.forEach((q, i) => {
+    const selected = q.querySelector('input[type="radio"]:checked');
+    const answer = q.querySelector('.quiz-answer');
+    const correct = answer.textContent.split(': ')[1];
+    
+    answer.style.display = 'block';
+    
+    if (selected && selected.value === correct) {
+      score++;
+      q.style.borderLeft = '4px solid #10b981';
+    } else {
+      q.style.borderLeft = '4px solid #ef4444';
+    }
+  });
+  
+  alert(`You scored ${score} out of ${questions.length}!`);
+}
+
+function saveQuizToFavorites() {
+  if (!window.currentQuiz) {
+    alert('No quiz to save');
+    return;
+  }
+  
+  console.log('Saving quiz:', window.currentQuiz);
+  
+  fetch('save_quiz_favorite.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      questions: window.currentQuiz
+    })
+  })
+  .then(res => {
+    console.log('Response status:', res.status);
+    return res.text();
+  })
+  .then(text => {
+    console.log('Raw response:', text);
+    return JSON.parse(text);
+  })
+  .then(data => {
+    console.log('Parsed data:', data);
+    if (data.success) {
+      alert('Quiz saved to favorites!');
+    } else {
+      alert('Error: ' + (data.message || 'Unknown error'));
+      console.error('Error details:', data);
+    }
+  })
+  .catch(err => {
+    alert('Error saving quiz');
+    console.error('Fetch error:', err);
+  });
+}
 </script>
 
 <?php include '../includes/ai_chat.php'; ?>

@@ -1,0 +1,172 @@
+2026-03-31 16:47:41 - REQUEST_METHOD: POST
+POST data: Array
+(
+    [notes] => 
+    [type] => quiz
+)
+
+Raw input: notes=&type=quiz
+
+Final notes length: 0
+Final type: quiz
+
+2026-03-31 16:50:52 - Script started
+REQUEST_METHOD: POST
+Raw input: notes=&type=quiz
+POST data: Array
+(
+    [notes] => 
+    [type] => quiz
+)
+
+Notes from POST: 0 chars
+Type from POST: quiz
+Notes from parsed: 0 chars
+Type from parsed: quiz
+Final notes length: 0
+Final type: quiz
+
+Sending error response: {"success":false,"message":"Notes and type are required","debug":{"notes_length":0,"type":"quiz","raw_input_length":16,"post_keys":["notes","type"]}}
+
+2026-03-31 16:52:34 - Script started
+REQUEST_METHOD: POST
+Raw input: notes=&type=quiz
+POST data: Array
+(
+    [notes] => 
+    [type] => quiz
+)
+
+Notes from POST: 0 chars
+Type from POST: quiz
+Notes from parsed: 0 chars
+Type from parsed: quiz
+Final notes length: 0
+Final type: quiz
+
+Sending error response: {"success":false,"message":"Notes and type are required","debug":{"notes_length":0,"type":"quiz","raw_input_length":16,"post_keys":["notes","type"]}}
+
+2026-03-31 16:53:56 - Script started
+REQUEST_METHOD: POST
+Raw input: notes=PHP%20runs%20on%20all%20major%20platforms%20(Windows%2C%20Linux%2C%20Unix%2C%20Mac%20OS%20X%2C%20etc.)%0APHP%20is%20compatible%20with%20all%20leading%20web%20servers%20(Nginx%2C%20Apache%2C%20Cloudflare%2C%20Microsoft%20IIS%2C%20etc.)%0APHP%20supports%20a%20wide%20range%20of%20databases%20(MySQL%2C%20PostgreSQL%2C%20MS%20SQL%2C%20db2%2C%20Oracle%20Database%2C%20MongoDB%2C%20etc.)%0APHP%20is%20free.%20Download%20it%20from%20the%20official%20PHP%20resource%3A%20www.php.net%0APHP%20is%20easy%20to%20learn%20and%20runs%20efficiently%20on%20the%20server%20side&type=quiz
+POST data: Array
+(
+    [notes] => PHP runs on all major platforms (Windows, Linux, Unix, Mac OS X, etc.)
+PHP is compatible with all leading web servers (Nginx, Apache, Cloudflare, Microsoft IIS, etc.)
+PHP supports a wide range of databases (MySQL, PostgreSQL, MS SQL, db2, Oracle Database, MongoDB, etc.)
+PHP is free. Download it from the official PHP resource: www.php.net
+PHP is easy to learn and runs efficiently on the server side
+    [type] => quiz
+)
+
+Notes from POST: 400 chars
+Type from POST: quiz
+Final notes length: 400
+Final type: quiz
+
+2026-03-31 16:56:47 - Script started
+REQUEST_METHOD: POST
+Raw input: notes=PHP%20runs%20on%20all%20major%20platforms%20(Windows%2C%20Linux%2C%20Unix%2C%20Mac%20OS%20X%2C%20etc.)%0APHP%20is%20compatible%20with%20all%20leading%20web%20servers%20(Nginx%2C%20Apache%2C%20Cloudflare%2C%20Microsoft%20IIS%2C%20etc.)%0APHP%20supports%20a%20wide%20range%20of%20databases%20(MySQL%2C%20PostgreSQL%2C%20MS%20SQL%2C%20db2%2C%20Oracle%20Database%2C%20MongoDB%2C%20etc.)%0APHP%20is%20free.%20Download%20it%20from%20the%20official%20PHP%20resource%3A%20www.php.net%0APHP%20is%20easy%20to%20learn%20and%20runs%20efficiently%20on%20the%20server%20side&type=quiz
+POST data: Array
+(
+    [notes] => PHP runs on all major platforms (Windows, Linux, Unix, Mac OS X, etc.)
+PHP is compatible with all leading web servers (Nginx, Apache, Cloudflare, Microsoft IIS, etc.)
+PHP supports a wide range of databases (MySQL, PostgreSQL, MS SQL, db2, Oracle Database, MongoDB, etc.)
+PHP is free. Download it from the official PHP resource: www.php.net
+PHP is easy to learn and runs efficiently on the server side
+    [type] => quiz
+)
+
+Notes from POST: 400 chars
+Type from POST: quiz
+Final notes length: 400
+Final type: quiz
+
+2026-03-31 16:59:02 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 404
+API Error: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-31 16:59:41 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 404
+API Error: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-31 17:00:26 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 404
+API Error: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-31 17:01:35 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 404
+API Error: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-1.5-flash is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-31 17:02:47 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 404
+API Error: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-pro is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-31 17:03:52 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 404
+API Error: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-2.0-flash-exp is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+2026-03-31 17:04:17 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 200
+2026-03-31 17:07:20 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 200
+2026-03-31 17:08:42 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 200
+2026-03-31 17:25:59 - Script started
+Notes length: 400
+Type: quiz
+API Response Code: 200

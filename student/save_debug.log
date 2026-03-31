@@ -1,0 +1,246 @@
+2026-03-31 17:08:15 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => According to the notes, on which platforms can PHP run?
+                    [options] => Array
+                        (
+                            [A] => Only Windows and Linux
+                            [B] => All major platforms, including Windows, Linux, Unix, and Mac OS X
+                            [C] => Exclusively server-side Linux distributions
+                            [D] => Mobile operating systems only
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => With which web servers is PHP compatible, based on the provided information?
+                    [options] => Array
+                        (
+                            [A] => Only Apache
+                            [B] => A limited selection of older web servers
+                            [C] => All leading web servers, such as Nginx, Apache, Cloudflare, and Microsoft IIS
+                            [D] => Cloud-based servers only
+                        )
+
+                    [correct] => C
+                )
+
+            [2] => Array
+                (
+                    [question] => What is true about PHP's database support, according to the notes?
+                    [options] => Array
+                        (
+                            [A] => It only supports MySQL databases.
+                            [B] => It supports a wide range of databases including MySQL, PostgreSQL, MS SQL, and MongoDB.
+                            [C] => It primarily supports NoSQL databases.
+                            [D] => Database support is limited to proprietary systems.
+                        )
+
+                    [correct] => B
+                )
+
+            [3] => Array
+                (
+                    [question] => What is the cost of PHP, and where can it be downloaded?
+                    [options] => Array
+                        (
+                            [A] => It is free and can be downloaded from the official PHP resource: www.php.net.
+                            [B] => It requires a paid license from its official vendor.
+                            [C] => It is free but only available through commercial hosting providers.
+                            [D] => It is free for personal use but paid for commercial projects, downloadable from a developer forum.
+                        )
+
+                    [correct] => A
+                )
+
+            [4] => Array
+                (
+                    [question] => Based on the notes, what are two key characteristics of PHP regarding its usability and performance?
+                    [options] => Array
+                        (
+                            [A] => It is difficult to learn and runs client-side.
+                            [B] => It is easy to learn and runs efficiently on the server side.
+                            [C] => It is easy to learn but inefficient for server-side operations.
+                            [D] => It requires advanced programming knowledge and runs only on specific hardware.
+                        )
+
+                    [correct] => B
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Mar 31, 2026 05:08 PM
+Quiz data length: 1765
+2026-03-31 17:08:53 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => On which of the following platforms can PHP run?
+                    [options] => Array
+                        (
+                            [A] => Windows, Linux, Unix, and Mac OS X
+                            [B] => Only Windows and Linux
+                            [C] => Mac OS X exclusively
+                            [D] => Android and iOS only
+                        )
+
+                    [correct] => A
+                )
+
+            [1] => Array
+                (
+                    [question] => PHP is compatible with a wide range of web servers, including:
+                    [options] => Array
+                        (
+                            [A] => Nginx, Apache, and Microsoft IIS
+                            [B] => Only Apache
+                            [C] => Google Chrome browser
+                            [D] => Mozilla Firefox browser
+                        )
+
+                    [correct] => A
+                )
+
+            [2] => Array
+                (
+                    [question] => Which of these databases does PHP support?
+                    [options] => Array
+                        (
+                            [A] => MySQL, PostgreSQL, Oracle Database, and MongoDB
+                            [B] => Only MySQL and PostgreSQL
+                            [C] => Microsoft Excel spreadsheets
+                            [D] => Adobe Photoshop files
+                        )
+
+                    [correct] => A
+                )
+
+            [3] => Array
+                (
+                    [question] => What is the cost of PHP and where can it be downloaded from officially?
+                    [options] => Array
+                        (
+                            [A] => PHP is free and can be downloaded from www.php.net
+                            [B] => PHP is paid software available on www.php.com
+                            [C] => PHP is free but only available through a specific app store
+                            [D] => PHP requires a subscription to download from www.php.net
+                        )
+
+                    [correct] => A
+                )
+
+            [4] => Array
+                (
+                    [question] => Based on the notes, which statement about PHP's characteristics is true?
+                    [options] => Array
+                        (
+                            [A] => PHP is easy to learn and runs efficiently on the server side.
+                            [B] => PHP is difficult to learn but runs efficiently on the client side.
+                            [C] => PHP is easy to learn but runs slowly on the server side.
+                            [D] => PHP is an inefficient client-side scripting language.
+                        )
+
+                    [correct] => A
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Mar 31, 2026 05:08 PM
+Quiz data length: 1396
+2026-03-31 17:26:12 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => On which of the following platforms can PHP run?
+                    [options] => Array
+                        (
+                            [A] => Windows only
+                            [B] => Linux and Unix exclusively
+                            [C] => Mac OS X only
+                            [D] => All major platforms including Windows, Linux, Unix, and Mac OS X
+                        )
+
+                    [correct] => D
+                )
+
+            [1] => Array
+                (
+                    [question] => PHP is compatible with which types of web servers?
+                    [options] => Array
+                        (
+                            [A] => Only Nginx and Apache
+                            [B] => Only Microsoft IIS
+                            [C] => All leading web servers, such as Nginx, Apache, Cloudflare, and Microsoft IIS
+                            [D] => Only servers specifically designed for PHP
+                        )
+
+                    [correct] => C
+                )
+
+            [2] => Array
+                (
+                    [question] => Which statement best describes PHP's database support?
+                    [options] => Array
+                        (
+                            [A] => It is limited to only two specific databases.
+                            [B] => It supports only proprietary databases like Oracle Database.
+                            [C] => It supports a wide range of databases including MySQL, PostgreSQL, MS SQL, and MongoDB.
+                            [D] => PHP does not inherently support databases.
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => What is the cost of PHP and where can it be downloaded?
+                    [options] => Array
+                        (
+                            [A] => It is a paid software, available through various commercial vendors.
+                            [B] => It is free and can be downloaded from its official resource, www.php.net.
+                            [C] => It is free, but only available as part of a commercial web server package.
+                            [D] => It requires a subscription fee and is distributed via private channels.
+                        )
+
+                    [correct] => B
+                )
+
+            [4] => Array
+                (
+                    [question] => Which of the following describes PHP's characteristics regarding ease of learning and execution?
+                    [options] => Array
+                        (
+                            [A] => It is difficult to learn and runs inefficiently on the client side.
+                            [B] => It is easy to learn and runs efficiently on the server side.
+                            [C] => It is moderately difficult to learn and runs on the client side only.
+                            [D] => It is easy to learn but is known for inefficient server-side performance.
+                        )
+
+                    [correct] => B
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Mar 31, 2026 05:26 PM
+Quiz data length: 1716
