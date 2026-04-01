@@ -1052,10 +1052,11 @@ overlay.addEventListener('click', () => {
 .notes-submit-btn{background:var(--cyan);color:#fff}
 .notes-submit-btn:hover{background:#0891b2;transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,0.3)}
 .options-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.option-card{background:#fff;border:2px solid #e5e7eb;border-radius:12px;padding:24px 20px;text-align:center;cursor:pointer;transition:all 0.3s;display:flex;flex-direction:column;align-items:center;gap:12px}
-.option-card:hover{border-color:var(--cyan);background:var(--cyan-dim);transform:translateY(-4px);box-shadow:0 8px 20px rgba(6,182,212,0.2)}
+.option-card{background:#fff;border:2px solid #e5e7eb;border-radius:12px;padding:24px 20px;text-align:center;cursor:pointer;transition:all 0.3s;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.option-card:hover{color: white; border-color:var(--cyan);background:var(--cyan-dim);transform:translateY(-4px);box-shadow:0 8px 20px rgba(6,182,212,0.2) }
 .option-card i{font-size:2.5rem;color:var(--cyan)}
 .option-card h4{margin:0;font-size:1.1rem;color:#1f2937;font-weight:700}
+.option-card h4:hover{color:white;}
 .option-card p{margin:0;font-size:0.85rem;color:#6b7280;line-height:1.4}
 .quiz-container,.essay-container,.summary-container{padding:10px 0}
 .quiz-question,.essay-question{background:#f9fafb;border-radius:10px;padding:20px;margin-bottom:16px;border-left:4px solid transparent;transition:all 0.3s}

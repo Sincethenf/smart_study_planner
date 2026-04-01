@@ -15,7 +15,7 @@
         <i class="fas fa-robot"></i>
       </div>
       <div class="ai-bubble">
-        <p>Please Connect to Internet</p>
+        <p>Hello boss</p>
       </div>
     </div>
   </div>
