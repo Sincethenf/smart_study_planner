@@ -360,16 +360,6 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
             </span>
             <span class="fav-date"><?php echo date('M d, Y', strtotime($favorite['created_at'])); ?></span>
           </div>
-          
-          <?php if ($favorite['content_type'] === 'quiz'): ?>
-            <button class="btn-view-quiz" onclick="openQuizModal(<?php echo $favorite['id']; ?>, '<?php echo htmlspecialchars(addslashes($favorite['title'])); ?>', '<?php echo date('M d, Y', strtotime($favorite['created_at'])); ?>')" style="width:100%;margin-top:12px;padding:10px;background:var(--violet);color:#fff;border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all 0.2s">
-              <i class="fas fa-play"></i> Start Quiz
-            </button>
-          <?php else: ?>
-            <button class="btn-view-quiz" onclick="openModal(<?php echo $favorite['id']; ?>, '<?php echo htmlspecialchars(addslashes($favorite['title'])); ?>', '<?php echo $favorite['content_type']; ?>', '<?php echo date('M d, Y', strtotime($favorite['created_at'])); ?>')" style="width:100%;margin-top:12px;padding:10px;background:var(--cyan);color:#fff;border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all 0.2s">
-              <i class="fas fa-eye"></i> View Content
-            </button>
-          <?php endif; ?>
         </div>
       </div>
       <?php endwhile; ?>
@@ -506,14 +496,19 @@ function openModal(id, title, type, date) {
             <i class="fas fa-times"></i>
           </button>
         </div>
-        <div class="notes-modal-body" style="max-height:60vh;overflow-y:auto">
+        <div class="notes-modal-body" style="max-height:60vh;overflow-y:auto" id="contentModalBody">
           <div style="color:#374151;line-height:1.8;font-size:0.95rem">${favorite.content_data.replace(/\n/g, '<br>')}</div>
         </div>
         <div class="notes-modal-footer" style="justify-content:space-between">
           <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;background:var(--violet-dim);color:var(--violet)">
             <i class="fas fa-tag"></i> ${type.charAt(0).toUpperCase() + type.slice(1)}
           </span>
-          <span style="font-size:0.75rem;color:var(--text3);font-family:'JetBrains Mono',monospace">${date}</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:0.75rem;color:var(--text3);font-family:'JetBrains Mono',monospace">${date}</span>
+            <button class="notes-cancel-btn" onclick="copyModalContent()" id="copyModalBtn" style="padding:8px 16px">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -521,6 +516,36 @@ function openModal(id, title, type, date) {
   
   document.body.insertAdjacentHTML('beforeend', modal);
   document.body.style.overflow = 'hidden';
+}
+
+function copyModalContent() {
+  const modalBody = document.getElementById('contentModalBody');
+  const copyBtn = document.getElementById('copyModalBtn');
+  if (!modalBody) return;
+  
+  const text = modalBody.innerText || modalBody.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    copyBtn.style.background = 'var(--emerald)';
+    setTimeout(() => {
+      copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+      copyBtn.style.background = '#f3f4f6';
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    copyBtn.style.background = 'var(--emerald)';
+    setTimeout(() => {
+      copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+      copyBtn.style.background = '#f3f4f6';
+    }, 2000);
+  });
 }
 
 function closeContentModal() {
