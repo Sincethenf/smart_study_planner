@@ -31,7 +31,7 @@ file_put_contents($debugFile, "Title: $title\n", FILE_APPEND);
 file_put_contents($debugFile, "Quiz data length: " . strlen($quiz_data) . "\n", FILE_APPEND);
 
 // Insert into favorites table
-$stmt = $conn->prepare("INSERT INTO favorites (user_id, title, content, type, created_at) VALUES (?, ?, ?, 'quiz', NOW())");
+$stmt = $conn->prepare("INSERT INTO favorites (user_id, title, content_data, content_type, created_at) VALUES (?, ?, ?, 'quiz', NOW())");
 $stmt->bind_param("iss", $user_id, $title, $quiz_data);
 
 if ($stmt->execute()) {

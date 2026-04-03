@@ -334,9 +334,24 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
             </div>
           </div>
           
-          <div class="card-content" onclick="openModal('<?php echo htmlspecialchars(addslashes($favorite['title'])); ?>', `<?php echo htmlspecialchars(str_replace(['`', '\r\n', '\n', '\r'], ['\`', '\n', '\n', '\n'], $favorite['content_data'])); ?>`, '<?php echo ucfirst($favorite['content_type']); ?>', '<?php echo date('M d, Y', strtotime($favorite['created_at'])); ?>')">
-            <?php echo nl2br(htmlspecialchars($favorite['content_data'])); ?>
-          </div>
+          <?php if ($favorite['content_type'] === 'quiz'): ?>
+            <div class="card-content quiz-preview">
+              <div style="display:flex;align-items:center;gap:8px;color:var(--violet);margin-bottom:8px">
+                <i class="fas fa-list-check"></i>
+                <span style="font-weight:600">Multiple Choice Quiz</span>
+              </div>
+              <?php 
+                $quiz_data = json_decode($favorite['content_data'], true);
+                if ($quiz_data && is_array($quiz_data)) {
+                  echo '<p style="color:var(--text3);font-size:0.8rem">' . count($quiz_data) . ' questions</p>';
+                }
+              ?>
+            </div>
+          <?php else: ?>
+            <div class="card-content" onclick="openModal(<?php echo $favorite['id']; ?>, '<?php echo htmlspecialchars(addslashes($favorite['title'])); ?>', '<?php echo $favorite['content_type']; ?>', '<?php echo date('M d, Y', strtotime($favorite['created_at'])); ?>')">
+              <?php echo nl2br(htmlspecialchars(substr($favorite['content_data'], 0, 200))); ?><?php echo strlen($favorite['content_data']) > 200 ? '...' : ''; ?>
+            </div>
+          <?php endif; ?>
           
           <div class="card-footer">
             <span class="type-badge">
@@ -345,6 +360,16 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
             </span>
             <span class="fav-date"><?php echo date('M d, Y', strtotime($favorite['created_at'])); ?></span>
           </div>
+          
+          <?php if ($favorite['content_type'] === 'quiz'): ?>
+            <button class="btn-view-quiz" onclick="openQuizModal(<?php echo $favorite['id']; ?>, '<?php echo htmlspecialchars(addslashes($favorite['title'])); ?>', '<?php echo date('M d, Y', strtotime($favorite['created_at'])); ?>')" style="width:100%;margin-top:12px;padding:10px;background:var(--violet);color:#fff;border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all 0.2s">
+              <i class="fas fa-play"></i> Start Quiz
+            </button>
+          <?php else: ?>
+            <button class="btn-view-quiz" onclick="openModal(<?php echo $favorite['id']; ?>, '<?php echo htmlspecialchars(addslashes($favorite['title'])); ?>', '<?php echo $favorite['content_type']; ?>', '<?php echo date('M d, Y', strtotime($favorite['created_at'])); ?>')" style="width:100%;margin-top:12px;padding:10px;background:var(--cyan);color:#fff;border:none;border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:all 0.2s">
+              <i class="fas fa-eye"></i> View Content
+            </button>
+          <?php endif; ?>
         </div>
       </div>
       <?php endwhile; ?>
@@ -383,6 +408,54 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   </div>
 </div>
 
+<style>
+.quiz-preview{cursor:default !important;-webkit-line-clamp:unset !important}
+.btn-view-quiz:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(139,92,246,0.3)}
+
+/* Notes Modal Styles - Same as generate.php */
+.notes-modal{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;display:none;align-items:center;justify-content:center}
+.notes-modal.open{display:flex}
+.notes-modal-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px)}
+.notes-modal-content{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);width:90%;max-width:800px;box-shadow:0 20px 60px rgba(0,0,0,0.4);animation:modalSlideUp 0.3s ease;max-height:90vh;display:flex;flex-direction:column;color:var(--text)}
+@keyframes modalSlideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.notes-modal-header{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+.notes-modal-header h3{margin:0;font-size:1.25rem;color:var(--text);display:flex;align-items:center;gap:10px}
+.notes-modal-header i{color:var(--cyan)}
+.notes-modal-close{background:none;border:none;font-size:1.5rem;color:var(--text3);cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);transition:all 0.2s}
+.notes-modal-close:hover{background:var(--rose-dim);color:var(--rose)}
+.notes-modal-body{padding:24px 28px;flex:1;overflow-y:auto}
+.notes-modal-footer{padding:20px 28px;border-top:1px solid var(--border);display:flex;gap:12px;justify-content:flex-end}
+.notes-cancel-btn,.notes-submit-btn{padding:10px 24px;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Outfit',sans-serif;border:none}
+.notes-cancel-btn{background:var(--bg3);color:var(--text2)}
+.notes-cancel-btn:hover{background:var(--surface2);color:var(--text)}
+.notes-submit-btn{background:var(--cyan);color:#fff}
+.notes-submit-btn:hover{background:#0891b2;transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,0.3)}
+
+/* Quiz Styles - Match generate.php exactly */
+.quiz-container{padding:10px 0}
+.quiz-question{background:#f9fafb;border-radius:10px;padding:20px;margin-bottom:16px;border-left:4px solid transparent;transition:all 0.3s}
+.quiz-question h4{margin:0 0 16px 0;color:#1f2937;font-size:1rem;line-height:1.6}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-option{display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:all 0.2s}
+.quiz-option:hover{border-color:var(--cyan);background:var(--cyan-dim)}
+.quiz-option input{cursor:pointer}
+.quiz-option span{flex:1;color:#374151;font-size:0.9rem}
+.quiz-answer{margin-top:12px;padding:10px;background:#fef3c7;border-radius:6px;color:#92400e;font-weight:600;font-size:0.85rem;display:none}
+.quiz-question.correct{border-left-color:#10b981}
+.quiz-question.incorrect{border-left-color:#ef4444}
+
+@media(max-width:768px){
+  .notes-modal-content{width:95%;max-width:none}
+  .notes-modal-header,.notes-modal-body,.notes-modal-footer{padding:18px 20px}
+  .notes-modal-header h3{font-size:1.1rem}
+}
+@media(max-width:480px){
+  .notes-modal-header,.notes-modal-body,.notes-modal-footer{padding:16px 18px}
+  .notes-modal-header h3{font-size:1rem}
+  .notes-cancel-btn,.notes-submit-btn{padding:8px 18px;font-size:0.85rem}
+}
+</style>
+
 <script>
 // Loading Screen
 window.addEventListener('load', function() {
@@ -404,13 +477,159 @@ overlay.addEventListener('click', () => {
 });
 
 // ── Modal functions ──────────────────────────────────────────
-function openModal(title, content, type, date) {
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalBody').innerHTML = content.replace(/\n/g, '<br>');
-  document.getElementById('modalType').innerHTML = '<i class="fas fa-tag"></i> ' + type;
-  document.getElementById('modalDate').textContent = date;
-  document.getElementById('modalOverlay').classList.add('open');
+const favoritesData = <?php 
+  $favorites->data_seek(0);
+  $fav_array = [];
+  while($f = $favorites->fetch_assoc()) {
+    $fav_array[$f['id']] = [
+      'title' => $f['title'],
+      'content_data' => $f['content_data'],
+      'content_type' => $f['content_type'],
+      'created_at' => $f['created_at']
+    ];
+  }
+  echo json_encode($fav_array);
+?>;
+
+function openModal(id, title, type, date) {
+  const favorite = favoritesData[id];
+  if (!favorite) return;
+  
+  // Create modal with notes-modal styling (same as quiz modal)
+  const modal = `
+    <div class="notes-modal open" id="contentModal">
+      <div class="notes-modal-overlay" onclick="closeContentModal()"></div>
+      <div class="notes-modal-content">
+        <div class="notes-modal-header">
+          <h3><i class="fas fa-file-lines"></i> ${title}</h3>
+          <button class="notes-modal-close" onclick="closeContentModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="notes-modal-body" style="max-height:60vh;overflow-y:auto">
+          <div style="color:#374151;line-height:1.8;font-size:0.95rem">${favorite.content_data.replace(/\n/g, '<br>')}</div>
+        </div>
+        <div class="notes-modal-footer" style="justify-content:space-between">
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:0.72rem;font-weight:700;background:var(--violet-dim);color:var(--violet)">
+            <i class="fas fa-tag"></i> ${type.charAt(0).toUpperCase() + type.slice(1)}
+          </span>
+          <span style="font-size:0.75rem;color:var(--text3);font-family:'JetBrains Mono',monospace">${date}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modal);
   document.body.style.overflow = 'hidden';
+}
+
+function closeContentModal() {
+  const modal = document.getElementById('contentModal');
+  if (modal) modal.remove();
+  document.body.style.overflow = '';
+}
+
+function openQuizModal(id, title, date) {
+  const favorite = favoritesData[id];
+  if (!favorite) return;
+  
+  let quizData;
+  try {
+    quizData = JSON.parse(favorite.content_data);
+  } catch(e) {
+    alert('Error loading quiz data');
+    return;
+  }
+  
+  let html = '<div class="quiz-container">';
+  quizData.forEach((q, i) => {
+    html += `
+      <div class="quiz-question" id="quiz-q-${i}">
+        <h4>${i + 1}. ${q.question}</h4>
+        <div class="quiz-options">
+          ${Object.entries(q.options).map(([key, val]) => `
+            <label class="quiz-option">
+              <input type="radio" name="quiz_q${i}" value="${key}">
+              <span>${key}. ${val}</span>
+            </label>
+          `).join('')}
+        </div>
+        <div class="quiz-answer" id="quiz-answer-${i}">Correct Answer: ${q.correct}</div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  
+  // Create modal with notes-modal styling
+  const modal = `
+    <div class="notes-modal open" id="quizModal">
+      <div class="notes-modal-overlay" onclick="closeQuizModal()"></div>
+      <div class="notes-modal-content">
+        <div class="notes-modal-header">
+          <h3><i class="fas fa-check-circle"></i> ${title}</h3>
+          <button class="notes-modal-close" onclick="closeQuizModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="notes-modal-body" style="max-height:60vh;overflow-y:auto">
+          ${html}
+        </div>
+        <div class="notes-modal-footer">
+          <button class="notes-cancel-btn" onclick="resetQuiz(${quizData.length})">
+            <i class="fas fa-rotate-right"></i> Reset
+          </button>
+          <button class="notes-submit-btn" onclick="checkQuizAnswers(${quizData.length})">
+            <i class="fas fa-check-circle"></i> Check Answers
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modal);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeQuizModal() {
+  const modal = document.getElementById('quizModal');
+  if (modal) modal.remove();
+  document.body.style.overflow = '';
+}
+
+function checkQuizAnswers(totalQuestions) {
+  let score = 0;
+  
+  for(let i = 0; i < totalQuestions; i++) {
+    const question = document.getElementById(`quiz-q-${i}`);
+    const selected = question.querySelector('input[type="radio"]:checked');
+    const answer = document.getElementById(`quiz-answer-${i}`);
+    const correct = answer.textContent.split(': ')[1];
+    
+    answer.style.display = 'block';
+    
+    if (selected && selected.value === correct) {
+      score++;
+      question.classList.add('correct');
+      question.classList.remove('incorrect');
+    } else {
+      question.classList.add('incorrect');
+      question.classList.remove('correct');
+    }
+  }
+  
+  alert(`You scored ${score} out of ${totalQuestions}!`);
+}
+
+function resetQuiz(totalQuestions) {
+  for(let i = 0; i < totalQuestions; i++) {
+    const question = document.getElementById(`quiz-q-${i}`);
+    const answer = document.getElementById(`quiz-answer-${i}`);
+    const radios = question.querySelectorAll('input[type="radio"]');
+    
+    radios.forEach(r => r.checked = false);
+    answer.style.display = 'none';
+    question.classList.remove('correct', 'incorrect');
+  }
 }
 
 function closeModal() {

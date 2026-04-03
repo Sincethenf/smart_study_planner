@@ -326,3 +326,417 @@ Input: Array
 User ID: 7
 Title: Quiz - Apr 01, 2026 03:57 AM
 Quiz data length: 1556
+2026-04-02 00:18:43 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => What is Git primarily described as in the study material?
+                    [options] => Array
+                        (
+                            [A] => A cloud-based hosting service for Git repositories.
+                            [B] => A distributed version control system (DVCS).
+                            [C] => A web interface for collaborative project management.
+                            [D] => A social network exclusively for open-source contributors.
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => Which of the following best describes GitHub according to the notes?
+                    [options] => Array
+                        (
+                            [A] => A command-line tool that tracks changes in source code locally.
+                            [B] => An engine that powers distributed version control without a web interface.
+                            [C] => A cloud-based hosting service for Git repositories with collaboration tools.
+                            [D] => A platform solely for personal code storage without social features.
+                        )
+
+                    [correct] => C
+                )
+
+            [2] => Array
+                (
+                    [question] => The study material uses an analogy to explain the relationship between Git and GitHub. If Git is considered the 'engine,' what does GitHub represent?
+                    [options] => Array
+                        (
+                            [A] => The source code itself being developed.
+                            [B] => The primary command-line tool for version control.
+                            [C] => The dashboard, social network, and cloud storage for Git projects.
+                            [D] => An alternative version control system that competes with Git.
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => Which of these is NOT listed as a reason to use GitHub in the provided material?
+                    [options] => Array
+                        (
+                            [A] => To track every change, revert to previous versions, and understand who made what change.
+                            [B] => To facilitate teamwork, code review, and merging contributions from multiple developers.
+                            [C] => To serve as a public portfolio for developers to showcase their work.
+                            [D] => To automatically compile and deploy code to production servers upon commit.
+                        )
+
+                    [correct] => D
+                )
+
+            [4] => Array
+                (
+                    [question] => According to the notes, Git is primarily a command-line tool that runs ________.
+                    [options] => Array
+                        (
+                            [A] => Exclusively on cloud servers hosted by GitHub.
+                            [B] => Remotely as a web-based platform.
+                            [C] => Locally on your machine.
+                            [D] => Only within an Integrated Development Environment (IDE).
+                        )
+
+                    [correct] => C
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 02, 2026 12:18 AM
+Quiz data length: 1967
+2026-04-02 14:09:32 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => To which genus do tigers belong?
+                    [options] => Array
+                        (
+                            [A] => Felidae
+                            [B] => Panthera
+                            [C] => tigris
+                            [D] => Carnivora
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => What is a unique characteristic of a tiger's stripe pattern?
+                    [options] => Array
+                        (
+                            [A] => It changes significantly as the tiger ages.
+                            [B] => Each tiger's stripe pattern is unique, similar to a human fingerprint.
+                            [C] => It is identical among all tigers of the same subspecies.
+                            [D] => The stripes are only visible under specific light conditions.
+                        )
+
+                    [correct] => B
+                )
+
+            [2] => Array
+                (
+                    [question] => Which tiger subspecies is generally considered the largest?
+                    [options] => Array
+                        (
+                            [A] => Bengal tiger
+                            [B] => Sumatran tiger
+                            [C] => Siberian (Amur) tiger
+                            [D] => Malayan tiger
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => What adaptation gives tigers excellent night vision, stated to be 6 times better than humans?
+                    [options] => Array
+                        (
+                            [A] => An increased number of photoreceptor cells in the retina.
+                            [B] => The ability to dilate their pupils to an extreme size.
+                            [C] => A reflective layer behind the retina called the tapetum lucidum.
+                            [D] => Their eyes produce a faint bioluminescence in the dark.
+                        )
+
+                    [correct] => C
+                )
+
+            [4] => Array
+                (
+                    [question] => According to the study material, how many tiger subspecies are currently considered extinct?
+                    [options] => Array
+                        (
+                            [A] => Two
+                            [B] => Three
+                            [C] => Six
+                            [D] => Nine
+                        )
+
+                    [correct] => B
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 02, 2026 02:09 PM
+Quiz data length: 1252
+2026-04-02 14:09:36 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => To which genus do tigers belong?
+                    [options] => Array
+                        (
+                            [A] => Felidae
+                            [B] => Panthera
+                            [C] => tigris
+                            [D] => Carnivora
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => What is a unique characteristic of a tiger's stripe pattern?
+                    [options] => Array
+                        (
+                            [A] => It changes significantly as the tiger ages.
+                            [B] => Each tiger's stripe pattern is unique, similar to a human fingerprint.
+                            [C] => It is identical among all tigers of the same subspecies.
+                            [D] => The stripes are only visible under specific light conditions.
+                        )
+
+                    [correct] => B
+                )
+
+            [2] => Array
+                (
+                    [question] => Which tiger subspecies is generally considered the largest?
+                    [options] => Array
+                        (
+                            [A] => Bengal tiger
+                            [B] => Sumatran tiger
+                            [C] => Siberian (Amur) tiger
+                            [D] => Malayan tiger
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => What adaptation gives tigers excellent night vision, stated to be 6 times better than humans?
+                    [options] => Array
+                        (
+                            [A] => An increased number of photoreceptor cells in the retina.
+                            [B] => The ability to dilate their pupils to an extreme size.
+                            [C] => A reflective layer behind the retina called the tapetum lucidum.
+                            [D] => Their eyes produce a faint bioluminescence in the dark.
+                        )
+
+                    [correct] => C
+                )
+
+            [4] => Array
+                (
+                    [question] => According to the study material, how many tiger subspecies are currently considered extinct?
+                    [options] => Array
+                        (
+                            [A] => Two
+                            [B] => Three
+                            [C] => Six
+                            [D] => Nine
+                        )
+
+                    [correct] => B
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 02, 2026 02:09 PM
+Quiz data length: 1252
+2026-04-03 16:55:13 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => According to the study material, what crucial ecological role does the tiger play in its ecosystem?
+                    [options] => Array
+                        (
+                            [A] => Primary decomposer, breaking down dead organic matter.
+                            [B] => Herbivore, consuming vegetation to control plant populations.
+                            [C] => Apex predator, influencing prey populations and the health of entire ecosystems.
+                            [D] => Scavenger, primarily feeding on carcasses left by other predators.
+                        )
+
+                    [correct] => C
+                )
+
+            [1] => Array
+                (
+                    [question] => In the taxonomic classification provided, to which Genus and Family do Tigers belong?
+                    [options] => Array
+                        (
+                            [A] => Genus: *Felidae*, Family: *Panthera*
+                            [B] => Genus: *Panthera*, Family: *Felidae*
+                            [C] => Genus: *tigris*, Family: *Mammalia*
+                            [D] => Genus: *Chordata*, Family: *Animalia*
+                        )
+
+                    [correct] => B
+                )
+
+            [2] => Array
+                (
+                    [question] => What unique characteristic is noted about a tiger's stripe pattern?
+                    [options] => Array
+                        (
+                            [A] => It changes color seasonally for better camouflage.
+                            [B] => It is exactly the same for all tigers within a specific subspecies.
+                            [C] => Each tiger's stripe pattern is unique, similar to a human fingerprint.
+                            [D] => The stripes are only visible under ultraviolet light for inter-tiger communication.
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => Which tiger subspecies is generally recognized as the largest and is adapted to colder climates, as mentioned in the notes?
+                    [options] => Array
+                        (
+                            [A] => Bengal Tiger
+                            [B] => Sumatran Tiger
+                            [C] => Indochinese Tiger
+                            [D] => Siberian (Amur) Tiger
+                        )
+
+                    [correct] => D
+                )
+
+            [4] => Array
+                (
+                    [question] => How much better is a tiger's night vision compared to that of humans, according to the provided text?
+                    [options] => Array
+                        (
+                            [A] => 2 times better
+                            [B] => 4 times better
+                            [C] => 6 times better
+                            [D] => 10 times better
+                        )
+
+                    [correct] => C
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 03, 2026 04:55 PM
+Quiz data length: 1622
+Success!
+
+2026-04-03 17:06:23 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => What is a primary ecological role of tigers as apex predators?
+                    [options] => Array
+                        (
+                            [A] => Facilitating the spread of plant seeds.
+                            [B] => Preventing overgrazing by controlling prey populations.
+                            [C] => Enhancing soil fertility through their waste.
+                            [D] => Serving as a food source for smaller carnivores.
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => Which other big cat species are classified under the same genus (*Panthera*) as tigers?
+                    [options] => Array
+                        (
+                            [A] => Pumas, Cheetahs, Ocelots
+                            [B] => Lions, Leopards, Jaguars
+                            [C] => Lynxes, Bobcats, Servals
+                            [D] => Domestic Cats, Wild Cats, Caracals
+                        )
+
+                    [correct] => B
+                )
+
+            [2] => Array
+                (
+                    [question] => What is the primary function of a tiger's unique stripe pattern?
+                    [options] => Array
+                        (
+                            [A] => To attract mates during breeding season.
+                            [B] => To signal dominance within their territory.
+                            [C] => To provide disruptive camouflage in their habitat.
+                            [D] => To regulate body temperature in varied climates.
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => Which tiger subspecies is generally known to be the largest, adapted to colder climates?
+                    [options] => Array
+                        (
+                            [A] => Bengal Tiger
+                            [B] => Sumatran Tiger
+                            [C] => Indochinese Tiger
+                            [D] => Siberian (Amur) Tiger
+                        )
+
+                    [correct] => D
+                )
+
+            [4] => Array
+                (
+                    [question] => What special adaptation gives tigers excellent night vision, stated to be 6 times better than humans?
+                    [options] => Array
+                        (
+                            [A] => A larger pupil size compared to humans.
+                            [B] => A reflective layer behind the retina called the tapetum lucidum.
+                            [C] => The ability to dilate and constrict their pupils rapidly.
+                            [D] => A higher concentration of rod cells in their eyes.
+                        )
+
+                    [correct] => B
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 03, 2026 05:06 PM
+Quiz data length: 1501
+Success!
+

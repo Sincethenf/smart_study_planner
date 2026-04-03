@@ -1234,6 +1234,7 @@ function displayQuiz(questions) {
 }
 
 function displayEssay(questions) {
+  window.currentEssay = questions; // Store for saving
   let html = '<div class="essay-container">';
   questions.forEach((q, i) => {
     html += `
@@ -1243,13 +1244,29 @@ function displayEssay(questions) {
       </div>
     `;
   });
-  html += '</div>';
+  html += `
+    <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end">
+      <button class="notes-cancel-btn" onclick="saveEssayToFavorites()" style="background:var(--rose);color:#fff">
+        <i class="fas fa-heart"></i> Save to Favorites
+      </button>
+    </div>
+  </div>`;
   
   showResultModal('Essay Questions', html);
 }
 
 function displaySummary(summary) {
-  const html = `<div class="summary-container"><p>${summary.replace(/\n/g, '<br>')}</p></div>`;
+  window.currentSummary = summary; // Store for saving
+  const html = `
+    <div class="summary-container">
+      <p>${summary.replace(/\n/g, '<br>')}</p>
+      <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end">
+        <button class="notes-cancel-btn" onclick="saveSummaryToFavorites()" style="background:var(--rose);color:#fff">
+          <i class="fas fa-heart"></i> Save to Favorites
+        </button>
+      </div>
+    </div>
+  `;
   showResultModal('Summary', html);
 }
 
@@ -1329,6 +1346,74 @@ function saveQuizToFavorites() {
   })
   .catch(err => {
     alert('Error saving quiz');
+    console.error('Fetch error:', err);
+  });
+}
+
+function saveEssayToFavorites() {
+  if (!window.currentEssay) {
+    alert('No essay to save');
+    return;
+  }
+  
+  // Convert essay questions array to formatted string
+  let essayContent = '';
+  window.currentEssay.forEach((q, i) => {
+    essayContent += `${i + 1}. ${q.question}\n`;
+    if (q.points) {
+      essayContent += `${q.points}\n`;
+    }
+    essayContent += '\n';
+  });
+  
+  fetch('save_content_favorite.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      title: 'Essay Questions',
+      content: essayContent,
+      type: 'essay'
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Essay questions saved to favorites!');
+    } else {
+      alert('Error: ' + (data.message || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    alert('Error saving essay');
+    console.error('Fetch error:', err);
+  });
+}
+
+function saveSummaryToFavorites() {
+  if (!window.currentSummary) {
+    alert('No summary to save');
+    return;
+  }
+  
+  fetch('save_content_favorite.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      title: 'Summary',
+      content: window.currentSummary,
+      type: 'summarize'
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert('Summary saved to favorites!');
+    } else {
+      alert('Error: ' + (data.message || 'Unknown error'));
+    }
+  })
+  .catch(err => {
+    alert('Error saving summary');
     console.error('Fetch error:', err);
   });
 }
