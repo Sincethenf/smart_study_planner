@@ -19,7 +19,7 @@ if (empty($message)) {
 
 // Gemini API configuration
 $apiKey = '';
-// AIzaSyDUWOAwZKeR13yq-UxH7M0W04mU9q0Nw0Q
+//AIzaSyDBFMpCuI9jNuDOcxA5NUw_yWw7AlmY2B0
 $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 // Build context-aware prompt

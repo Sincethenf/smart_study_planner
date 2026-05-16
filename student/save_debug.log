@@ -740,3 +740,512 @@ Title: Quiz - Apr 03, 2026 05:06 PM
 Quiz data length: 1501
 Success!
 
+2026-04-05 18:26:16 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => What does the acronym PHP stand for, according to the study material?
+                    [options] => Array
+                        (
+                            [A] => Personal Home Page
+                            [B] => Preprocessed Hypertext Protocol
+                            [C] => PHP: Hypertext Preprocessor
+                            [D] => Programming High-level Page
+                            [correct] => C
+                        )
+
+                    [correct] => C
+                )
+
+            [1] => Array
+                (
+                    [question] => Where are PHP scripts executed?
+                    [options] => Array
+                        (
+                            [A] => On the client-side browser
+                            [B] => On the server
+                            [C] => Within the HTML document before sending to the client
+                            [D] => In a local development environment only
+                            [correct] => B
+                        )
+
+                    [correct] => B
+                )
+
+            [2] => Array
+                (
+                    [question] => Which of the following is NOT listed as a reason to use PHP?
+                    [options] => Array
+                        (
+                            [A] => It has a relatively low learning curve.
+                            [B] => It is primarily designed for mobile application development.
+                            [C] => It is cross-platform, running on various operating systems.
+                            [D] => Modern PHP versions offer significant performance improvements.
+                            [correct] => B
+                        )
+
+                    [correct] => B
+                )
+
+            [3] => Array
+                (
+                    [question] => PHP is described as an open-source scripting language. What is a key benefit of its open-source nature?
+                    [options] => Array
+                        (
+                            [A] => It requires a paid license for commercial use.
+                            [B] => It limits its use to specific proprietary web servers.
+                            [C] => It provides a large community support, extensive documentation, and a vast ecosystem.
+                            [D] => It is exclusively developed by a single corporation.
+                            [correct] => C
+                        )
+
+                    [correct] => C
+                )
+
+            [4] => Array
+                (
+                    [question] => PHP is especially suited for which type of development?
+                    [options] => Array
+                        (
+                            [A] => Desktop application development
+                            [B] => Operating system kernel development
+                            [C] => Web development
+                            [D] => Game engine development
+                            [correct] => C
+                        )
+
+                    [correct] => C
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 05, 2026 06:26 PM
+Quiz data length: 1535
+Success!
+
+2026-04-06 08:19:53 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => Who is this comprehensive Python study material primarily designed for?
+                    [options] => Array
+                        (
+                            [A] => Only experienced Python developers looking for advanced topics.
+                            [B] => Beginners with no prior programming knowledge, and also serves as a refresher for those with some experience.
+                            [C] => Individuals solely interested in web development with Python.
+                            [D] => People who already master Python and want to learn another language.
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => Which of the following topics is NOT explicitly listed under 'Basic Syntax and Core Concepts' in the study material's table of contents?
+                    [options] => Array
+                        (
+                            [A] => Variables and Data Types
+                            [B] => Input and Output
+                            [C] => Object-Oriented Programming
+                            [D] => Type Conversion
+                        )
+
+                    [correct] => C
+                )
+
+            [2] => Array
+                (
+                    [question] => In Python, which statement is used to explicitly exit a loop prematurely?
+                    [options] => Array
+                        (
+                            [A] => `continue`
+                            [B] => `elif`
+                            [C] => `break`
+                            [D] => `pass`
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => Which of these is a core data structure (collection) covered in the study material?
+                    [options] => Array
+                        (
+                            [A] => Functions
+                            [B] => Modules
+                            [C] => Classes
+                            [D] => Dictionaries
+                        )
+
+                    [correct] => D
+                )
+
+            [4] => Array
+                (
+                    [question] => What keyword combination is used in Python for handling potential errors or exceptions?
+                    [options] => Array
+                        (
+                            [A] => `if`, `else`, `then`
+                            [B] => `def`, `return`, `yield`
+                            [C] => `try`, `except`, `finally`
+                            [D] => `import`, `from`, `as`
+                        )
+
+                    [correct] => C
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 06, 2026 08:19 AM
+Quiz data length: 1340
+Success!
+
+2026-04-06 10:23:29 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => World War II (WWII) was a global war that lasted for what period?
+                    [options] => Array
+                        (
+                            [A] => 1914 to 1918
+                            [B] => 1939 to 1945
+                            [C] => 1945 to 1950
+                            [D] => 1929 to 1935
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => According to the study material, what was a significant characteristic of World War II's scale?
+                    [options] => Array
+                        (
+                            [A] => It primarily involved only European powers.
+                            [B] => It resulted in an estimated 70 to 85 million fatalities, a majority of whom were civilians.
+                            [C] => It was a conflict with minimal impact on political alignments.
+                            [D] => It notably excluded any acts of genocide.
+                        )
+
+                    [correct] => B
+                )
+
+            [2] => Array
+                (
+                    [question] => Which of the following was a major long-term consequence of World War II, as described in the notes?
+                    [options] => Array
+                        (
+                            [A] => The reinforcement of existing colonial empires.
+                            [B] => The end of all international military alliances.
+                            [C] => The rise of the United States and the Soviet Union as superpowers.
+                            [D] => The immediate cessation of all global conflicts.
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => The Treaty of Versailles contributed to the causes of World War II by:
+                    [options] => Array
+                        (
+                            [A] => Establishing a lasting peace agreement with Germany.
+                            [B] => Imposing harsh terms on Germany, fostering resentment and a desire for revenge.
+                            [C] => Promoting economic stability across Europe.
+                            [D] => Unifying European nations against common external threats.
+                        )
+
+                    [correct] => B
+                )
+
+            [4] => Array
+                (
+                    [question] => What condition in the interwar period fueled the rise of aggressive, expansionist, and anti-democratic ideologies like Fascism, which contributed to World War II?
+                    [options] => Array
+                        (
+                            [A] => Widespread political stability and economic prosperity.
+                            [B] => Economic hardship and political instability.
+                            [C] => A global movement towards democratic governance.
+                            [D] => The successful implementation of international disarmament treaties.
+                        )
+
+                    [correct] => C
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 06, 2026 10:23 AM
+Quiz data length: 1784
+Success!
+
+2026-04-06 17:16:14 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => Which of the following tasks is typically NOT considered a core part of the web development process as described in the notes?
+                    [options] => Array
+                        (
+                            [A] => Web content development
+                            [B] => Client-side scripting
+                            [C] => Hardware manufacturing for servers
+                            [D] => Database management
+                        )
+
+                    [correct] => C
+                )
+
+            [1] => Array
+                (
+                    [question] => According to the study material, which of these is a key reason to learn Web Development?
+                    [options] => Array
+                        (
+                            [A] => It primarily focuses on static print media design.
+                            [B] => It offers limited opportunities for remote work.
+                            [C] => It provides strong job prospects in a constantly evolving field.
+                            [D] => It discourages creativity and problem-solving skills.
+                        )
+
+                    [correct] => C
+                )
+
+            [2] => Array
+                (
+                    [question] => A developer who focuses primarily on what the user sees and interacts with on a website, specifically the user interface and user experience, is known as a:
+                    [options] => Array
+                        (
+                            [A] => Backend Developer
+                            [B] => Full-Stack Developer
+                            [C] => Frontend Developer
+                            [D] => DevOps Engineer
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => In the client-server model, what is the primary function of the 'client'?
+                    [options] => Array
+                        (
+                            [A] => To store website files and databases.
+                            [B] => To process requests and retrieve necessary data.
+                            [C] => To send requests to the server and render the response.
+                            [D] => To configure network security for the server.
+                        )
+
+                    [correct] => C
+                )
+
+            [4] => Array
+                (
+                    [question] => What is the primary characteristic that differentiates HTTPS from HTTP?
+                    [options] => Array
+                        (
+                            [A] => HTTPS is a newer, faster protocol for transmitting larger files.
+                            [B] => HTTPS defines how messages are formatted and transmitted more efficiently.
+                            [C] => HTTPS provides a secure, encrypted connection for data transmission.
+                            [D] => HTTPS allows servers to store more website files and databases.
+                        )
+
+                    [correct] => C
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 06, 2026 05:16 PM
+Quiz data length: 1702
+Success!
+
+2026-04-27 05:20:58 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => By what common epithet is William Shakespeare often hailed?
+                    [options] => Array
+                        (
+                            [A] => The Poet Laureate
+                            [B] => The Bard of Avon
+                            [C] => The London Dramatist
+                            [D] => The English Wordsmith
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => What significant date is traditionally associated with both William Shakespeare's birth celebration and his actual death?
+                    [options] => Array
+                        (
+                            [A] => January 1st
+                            [B] => July 4th
+                            [C] => April 23rd
+                            [D] => December 25th
+                        )
+
+                    [correct] => C
+                )
+
+            [2] => Array
+                (
+                    [question] => William Shakespeare was a founding member and shareholder of which famous acting company, which was later renamed the King's Men?
+                    [options] => Array
+                        (
+                            [A] => The Royal Players
+                            [B] => The Globe Troupe
+                            [C] => The Lord Chamberlain's Men
+                            [D] => The Queen's Revels
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => Which two primary historical and cultural eras in England did William Shakespeare's life and career span?
+                    [options] => Array
+                        (
+                            [A] => The Tudor and Georgian Eras
+                            [B] => The Victorian and Edwardian Eras
+                            [C] => The Elizabethan and Jacobean Eras
+                            [D] => The Renaissance and Reformation Eras
+                        )
+
+                    [correct] => C
+                )
+
+            [4] => Array
+                (
+                    [question] => What is referred to as Shakespeare's 'Lost Years'?
+                    [options] => Array
+                        (
+                            [A] => The period he spent studying abroad in Italy.
+                            [B] => The undocumented period between the birth of his twins and his emergence as a playwright in London.
+                            [C] => The years he was imprisoned for political writings.
+                            [D] => The time he spent exploring new territories with navigators.
+                        )
+
+                    [correct] => B
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 27, 2026 05:20 AM
+Quiz data length: 1391
+Success!
+
+2026-04-29 14:43:20 - Save quiz started
+Input: Array
+(
+    [questions] => Array
+        (
+            [0] => Array
+                (
+                    [question] => What were the core ideals that defined the French Revolution?
+                    [options] => Array
+                        (
+                            [A] => Peace, Order, Prosperity
+                            [B] => Liberty, Equality, Fraternity
+                            [C] => Faith, Hope, Charity
+                            [D] => Justice, Security, Progress
+                        )
+
+                    [correct] => B
+                )
+
+            [1] => Array
+                (
+                    [question] => Which of the following best describes the Ancien Régime in France before 1789?
+                    [options] => Array
+                        (
+                            [A] => A constitutional monarchy with a growing middle class that held significant political power.
+                            [B] => A federal system of autonomous provinces with elected local governments.
+                            [C] => An absolute monarchy characterized by a rigid social hierarchy and feudal practices.
+                            [D] => A democratic republic with universal suffrage and social welfare programs.
+                        )
+
+                    [correct] => C
+                )
+
+            [2] => Array
+                (
+                    [question] => In the social structure of the Ancien Régime, which Estate comprised over 97% of the population and bore almost all of the tax burden?
+                    [options] => Array
+                        (
+                            [A] => The First Estate
+                            [B] => The Second Estate
+                            [C] => The Third Estate
+                            [D] => The Fourth Estate
+                        )
+
+                    [correct] => C
+                )
+
+            [3] => Array
+                (
+                    [question] => Which group formed the First Estate in pre-revolutionary France?
+                    [options] => Array
+                        (
+                            [A] => The Nobility
+                            [B] => Wealthy merchants and lawyers (bourgeoisie)
+                            [C] => The Clergy
+                            [D] => City workers (sans-culottes)
+                        )
+
+                    [correct] => C
+                )
+
+            [4] => Array
+                (
+                    [question] => A significant privilege enjoyed by both the First and Second Estates under the Ancien Régime was their:
+                    [options] => Array
+                        (
+                            [A] => Obligation to perform the *corvée* (forced labor)
+                            [B] => Exemption from most taxes, including the *taille*
+                            [C] => Payment of tithes to the church
+                            [D] => Lack of political power and representation
+                        )
+
+                    [correct] => B
+                )
+
+        )
+
+)
+
+User ID: 7
+Title: Quiz - Apr 29, 2026 02:43 PM
+Quiz data length: 1563
+Success!
+

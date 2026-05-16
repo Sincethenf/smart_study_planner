@@ -357,7 +357,14 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
   border-radius:var(--radius);overflow:hidden;
   animation:slideUp .45s var(--ease) .12s both;
 }
-
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--radius-sm);
+  background:var(--surface);border:1px solid var(--border);
+  display:grid;place-items:center;color:var(--text2);
+  cursor:pointer;transition:all .18s var(--ease);
+  text-decoration:none;font-size:.88rem;position:relative;
+}
+.icon-btn:hover{border-color:var(--border-hi);color:var(--text)}
 /* Tab bar */
 .tab-bar{
   display:flex;gap:2px;padding:8px 8px 0;
@@ -617,7 +624,11 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
       <div class="topbar-sub">Manage your account and settings</div>
     </div>
     <div class="topbar-right">
-      <?php include '../includes/notification_dropdown.php'; ?>
+      <button class="icon-btn" title="AI Assistant" style="background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;border:none">
+        <i class="fas fa-robot"></i>
+      </button>
+      <?php include '../includes/notification_dropdown.php';
+            include '../includes/ai_chat.php';?>
       <a href="profile.php" class="user-pill">
         <div class="pill-avatar">
           <?php if (!empty($user['profile_picture'])): ?>
@@ -887,6 +898,8 @@ html,body{height:100%;font-family:'Outfit',sans-serif;background:var(--bg);color
 </div><!-- /shell -->
 
 <script>
+
+
 // ── Tab switching ────────────────────────────────────────
 function switchTab(id) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));

@@ -1071,6 +1071,10 @@ html, body {
           </div>
           <h2>Welcome Back</h2>
           <p>Please log in to continue your learning journey</p>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;background:rgba(123,44,255,.08);border:1px solid rgba(123,44,255,.2);border-radius:10px;font-size:.8rem;color:var(--purple-light)">
+            <i class="fas fa-info-circle"></i>
+            <span>Students and <strong>Admins</strong> can log in here</span>
+          </div>
         </div>
 
         <?php if ($error): ?>
